@@ -285,7 +285,8 @@
   "lead_time_hours": {
    "pilot": {
     "median": 23.84,
-    "p75": 33.72,
+    "p75": 32.78,
+    "p75_method": "nearest_rank_ceil_0_75_n_same_as_baseline",
     "mean": 20.39,
     "min": 1.48,
     "max": 36.52,
