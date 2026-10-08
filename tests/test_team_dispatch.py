@@ -35,10 +35,10 @@ def _setup(tmp_path, behaviour="commit", clock="2026-10-06T10:00:00+00:00"):
     return dispatcher, project, adapter, ledger, repo
 
 
-def _waiting_review(ledger, head):
+def _waiting_review(ledger, head, *, verdict="pass"):
     completed = ledger.last_of(41, "completed")
     ledger.append(41, "reviewed_awaiting_validation", head_sha=head, pr=completed["pr"], review_ref="c-1",
-                  reviewer="codex", reviewer_family="openai", verdict="pass", reviewer_model="fixture-model",
+                  reviewer="codex", reviewer_family="openai", verdict=verdict, reviewer_model="fixture-model",
                   reviewer_identity="openai/codex", review_execution_id="c" * 32,
                   reviewer_calibration={"calibrated_at": ledger.clock(), "model": "fixture-model",
                                         "defects_planted": 2, "defects_caught": 1, "false_alarms": 0})
@@ -181,7 +181,8 @@ def test_a_waiting_review_without_a_pass_verdict_is_not_promoted(tmp_path):
     dispatcher, project, _adapter, ledger, _repo = _setup(tmp_path)
     out = dispatcher.run(41, execute=True)
     head = out["head_sha"]
-    ledger.append(41, "reviewed_awaiting_validation", head_sha=head, review_ref="c-1", reviewer="codex", reviewer_family="openai", verdict="revise")
+    _waiting_review(ledger, head, verdict="revise")
+    assert dispatcher.native_review(41, project.pulls[out["pr"]]) is None
     project.checks_by_head[head] = "success"
     assert dispatcher.validate(41)["status"] == "validated"
     assert ledger.main_state(41)["state"] == "validated"
