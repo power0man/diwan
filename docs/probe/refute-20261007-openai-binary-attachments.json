@@ -1,0 +1,42 @@
+{
+  "agent": "openai/codex",
+  "date": "2026-10-07",
+  "measurement_limits": [
+    "Local synthetic probes only; no GitHub acceptance or live CLI isolation tested."
+  ],
+  "claims": [
+    {
+      "decision": "ق٧٤",
+      "claim": "Delegation preserves owner-only decisions and cross-family review.",
+      "how_i_tried": "Examined whether the local assignment can enforce procedural owner decisions.",
+      "result": "could_not_test",
+      "evidence": "The decision declares procedural delegation; no authenticated owner action was attempted."
+    },
+    {
+      "decision": "ق٧٥",
+      "claim": "Same-family and stale-head bot reviews do not count.",
+      "how_i_tried": "evaluate with same-family current-head and foreign-family stale-head approval",
+      "result": "held",
+      "evidence": [
+        "reviewed_only_by_the_author_family",
+        "no_review_from_another_family"
+      ]
+    },
+    {
+      "decision": "ق٧٦",
+      "claim": "Codex worker selects workspace-write without approval bypass flags.",
+      "how_i_tried": "Constructed CodexAdapter.work_argv without launching a CLI worker.",
+      "result": "held",
+      "evidence": {
+        "sandbox_flags": [
+          "-s",
+          "workspace-write"
+        ],
+        "approval_bypass_flags": []
+      },
+      "measurement_limits": [
+        "Argument construction only; actual isolation untested."
+      ]
+    }
+  ]
+}

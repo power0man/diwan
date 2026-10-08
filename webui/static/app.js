@@ -72,6 +72,9 @@ const errors = {
   agent_tool_contract_changed: "تغيّرت أدوات الجلسة منذ إنشائها. ابدأ محادثة جديدة قبل متابعة العمل بالأدوات.",
   answer_empty: "عاد المزوّد بلا جواب قابل للعرض. أعد المحاولة، وإن تكرر ذلك فابدأ محادثة جديدة.",
   attachments_invalid: "تعذر التحقق من المرفقات المختارة. أعد فتح الملفات واخترها من جديد.",
+  attachment_too_large: "المرفق يتجاوز الحجم المسموح: الصور حتى 256 كيلوبايت وPDF حتى 4 ميغابايت.",
+  attachment_type_unsupported: "المرفقات الثنائية المسموحة PNG وJPEG وPDF فقط، ويجب أن يطابق المحتوى نوع الملف.",
+  attachment_encoding_invalid: "تعذر قراءة بايتات المرفق. أعد رفع الملف.",
   body_incomplete: "لم يصل الطلب كاملًا. تحقق من الاتصال، ثم استرجع الحالة قبل إعادة المحاولة.",
   body_limit: "الطلب أكبر من الحد المسموح. قلّل النص أو المرفقات ثم أعد الإرسال.",
   coder_unavailable: "وضع البرمجة غير مهيأ في هذا التشغيل. استخدم محادثة نصية أو فعّل أدوات البرمجة أولًا.",
@@ -146,7 +149,7 @@ function showError(error) {
 }
 async function api(action, values = {}) {
   let response;
-  try {response = await fetch("/api", {method: "POST", headers: {"Content-Type": "application/json", "X-Diwan-CSRF": token}, body: JSON.stringify({action, ...values})});}
+  try {response = await fetch("/api", {method: "POST", headers: {"Content-Type": "application/json", "X-Diwan-CSRF": token, ...(action === "upload_binary" ? {"X-Diwan-Binary-Upload": "1"} : {})}, body: JSON.stringify({action, ...values})});}
   catch {throw {code: "network_error"};}
   let data; try {data = await response.json();} catch {throw {code: "network_error"};}
   if (!response.ok || (["apply", "upload"].includes(action) && data.status === "error")) throw {code: data.error_code};
@@ -741,9 +744,21 @@ $("upload").onchange = async () => {
   const file = $("upload").files[0], project = state.project, epoch = state.epoch; if(!file) return;
   try {
     if(!project) {notice("اختر مشروعًا قبل رفع ملف.", true); return;}
-    if(file.size > 65536) throw {code:"file_too_large"};
-    let content; try {content = new TextDecoder("utf-8", {fatal:true, ignoreBOM:true}).decode(await file.arrayBuffer());} catch {throw {code:"text_invalid"};}
-    await api("upload", {project, upload:uuid(), name:file.name, content});
+    const suffix = file.name.split(".").pop().toLowerCase();
+    const binary = ["png", "jpg", "jpeg", "pdf"].includes(suffix);
+    if(!binary && !["txt", "md", "json", "csv"].includes(suffix)) throw {code:"attachment_type_unsupported"};
+    const {limits} = await api("files", {project});
+    const limit = binary ? (suffix === "pdf" ? limits.pdf_bytes : limits.image_bytes) : limits.text_bytes;
+    if(file.size > limit) throw {code:binary ? "attachment_too_large" : "file_too_large"};
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    if(bytes.length > limit) throw {code:binary ? "attachment_too_large" : "file_too_large"};
+    if(binary) {
+      let encoded = ""; for(const byte of bytes) encoded += String.fromCharCode(byte);
+      await api("upload_binary", {project, upload:uuid(), name:file.name, data_base64:btoa(encoded)});
+    } else {
+      let content; try {content = new TextDecoder("utf-8", {fatal:true, ignoreBOM:true}).decode(bytes);} catch {throw {code:"text_invalid"};}
+      await api("upload", {project, upload:uuid(), name:file.name, content});
+    }
     if(epoch === state.epoch) {await loadFiles(project, epoch); notice("رُفع الملف. حدد المربع بجانبه لإرفاقه في الطلب.");}
   } catch(e) {if(epoch === state.epoch) showError(e);} finally {$("upload").value = "";}
 };
