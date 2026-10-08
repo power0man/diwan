@@ -35,7 +35,7 @@ from core.quoted import quarantine
 from team import team_home, worktrees_root
 from team.adapters.base import Adapter
 from team.adapters.opencode import ModelUnconfigured
-from team.ledger import LEASE_SECONDS, TeamLedger, TransitionError, lease_expired, now_utc
+from team.ledger import LEASE_SECONDS, ROUND_CLOSING_STATES, TeamLedger, TransitionError, lease_expired, now_utc
 from team.projects.base import Issue, ProjectAdapter, ProjectError
 
 LEDGER_FILE = "dispatch.jsonl"
@@ -130,11 +130,6 @@ def render_brief(issue: Issue, *, header: str, worker: str, family: str, branch:
     text = template.format(number=issue.number, title=title.text.strip(), body=body.text.strip() or "—",
                            header=header or "—", worker=worker, family=family, branch=branch)
     return text, codes
-
-
-# خاتمةُ جولة التصحيح. و`outcome_unknown` ليست خاتمةً: المهلةُ تقيّدها والعاملُ حيّ، ثم قد يُختم بـ`worker_unavailable`
-# فلا يُحتسب (ملاحظة Codex P2 على 376699d8، #349)
-ROUND_CLOSING_STATES = ("completed", "validation_failed", "worker_unavailable")
 
 
 @dataclass
@@ -347,6 +342,10 @@ class Dispatcher:
         completed = self.ledger.last_of(issue_number, "completed", state["attempt"])
         pull = self.project.pull(int(completed["pr"]))
         if pull.head_sha and pull.head_sha != completed["head_sha"]:
+            if not (self.ledger.head_receipted(issue_number, state["attempt"], pull.head_sha)
+                    or self._unrecorded_round_on_disk(issue_number, state["attempt"])):
+                raise Refusal("unreceipted_commits", f"الرأس {pull.head_sha[:12]} كُتب من خارج المرسِل بلا إيصال؛ "
+                              f"سجّله: team.dispatch intervene {issue_number} --head {pull.head_sha[:12]} --actor <المعرّف> --reason <السبب>")
             if record:
                 self.ledger.append(issue_number, "completed", head_sha=pull.head_sha, branch=completed["branch"], pr=pull.number,
                                    pr_url=pull.url, superseded_head=completed["head_sha"])
@@ -384,6 +383,25 @@ class Dispatcher:
             self.ledger.append(issue_number, "validation_failed", reason="checks_failed", head_sha=head)
             return {"status": "validation_failed", "head_sha": head}
         return {"status": status, "head_sha": head}
+
+    def intervene(self, issue_number: int, head: str, actor: str, reason: str, *, execute: bool = False) -> dict:
+        """إيصالُ كتابةٍ على فرع المهمّة من خارج المرسِل: يُقيَّد الرأسُ الحاليّ للطلب بمن كتبه ولماذا، فيقبله `sync_head` بعدها.
+        الإيصالُ إقرارٌ معلَن لا إثباتٌ بالتوقيع؛ وفائدتُه أن الرأسَ الجديد لا يدخل السجلَّ بلا كاتبٍ مسمًّى (تقييم المرحلة ٢ من ق٧٦)."""
+        state = self.ledger.main_state(issue_number)
+        if state is None or state["state"] not in ("completed", "validated", "verified") or self.ledger.open_attempt(issue_number) is None:
+            raise Refusal("nothing_to_intervene", f"الحالة {state['state'] if state else 'لا شيء'}")
+        if "/" not in actor or not actor.split("/", 1)[0] or not actor.split("/", 1)[1] or not reason.strip():
+            raise Refusal("intervention_unnamed", "الكاتبُ بصيغة <العائلة>/<المعرّف> والسببُ غيرُ فارغ")
+        completed = self.ledger.last_of(issue_number, "completed", state["attempt"])
+        pull = self.project.pull(int(completed["pr"]))
+        if len(head) < 7 or not pull.head_sha.startswith(head):
+            raise Refusal("head_not_current", f"رأسُ الطلب الحاليّ {pull.head_sha[:12]} لا {head[:12]}")
+        plan = {"issue": issue_number, "attempt": state["attempt"], "pr": pull.number, "head_sha": pull.head_sha,
+                "actor": actor, "reason": reason.strip()}
+        if not execute:
+            return {"status": "dry_run", **plan}
+        self.ledger.append(issue_number, "intervention", head_sha=pull.head_sha, actor=actor, reason=reason.strip(), pr=pull.number)
+        return {"status": "intervention_recorded", **plan}
 
     def accept(self, issue_number: int) -> dict:
         state = self.ledger.main_state(issue_number)
@@ -689,6 +707,11 @@ class Dispatcher:
         write_atomic(raw / "exit", str(rc))
         return self._finish_revision(issue_number, attempt, round_no, rc, raw, wt, head, adapter, plan)
 
+    def _unrecorded_round_on_disk(self, issue_number: int, attempt: int) -> bool:
+        """جولةُ عاملِ المرسِل بمعرّفاتها على القرص ولم تُقيَّد بعد (انقطع المرسِلُ بين الإطلاق والقيد): رأسُها الجديد إيصالُه مجلّدُها."""
+        raw = self.raw_dir(issue_number, attempt) / f"revision-{len(self.revision_rounds(issue_number, attempt)) + 1}"
+        return any((raw / name).exists() for name in ("pid", "child_pid", "wrapper_pid"))
+
     def _recover_unrecorded_round(self, issue_number: int, attempt: int, rounds: list[dict]) -> list[dict]:
         """مجلّدُ جولةٍ على القرص بلا قيدٍ لها: المرسِلُ انقطع بين الإطلاق والقيد. يُقيَّد `revision_started` بأثرٍ رجعي من ملفّات
         المعرّفات (كما يستعيد `resume` قيدَ `claimed`)، فلا يُعاد استعمالُ المجلّد ولا يُطلق عاملٌ ثانٍ فوق عاملٍ قد يكون حيًّا."""
@@ -972,6 +995,9 @@ def build_parser() -> argparse.ArgumentParser:
     take = sub.add_parser("takeover", parents=[sub_common]); take.add_argument("issue", type=int)
     take.add_argument("--owner-authorization", required=True)
     gc = sub.add_parser("gc", parents=[sub_common]); gc.add_argument("--yes", action="store_true")
+    inter = sub.add_parser("intervene", parents=[sub_common]); inter.add_argument("issue", type=int)
+    inter.add_argument("--head", required=True); inter.add_argument("--actor", required=True)
+    inter.add_argument("--reason", required=True); inter.add_argument("--execute", action="store_true")
     return parser
 
 
@@ -987,6 +1013,8 @@ def main(argv: list[str] | None = None) -> int:
             out = dispatcher.revise(args.issue, execute=args.execute, budget_usd=args.budget_usd, timeout=args.timeout, max_rounds=args.max_rounds)
         elif args.command == "gc":
             out = dispatcher.gc(yes=args.yes)
+        elif args.command == "intervene":
+            out = dispatcher.intervene(args.issue, args.head, args.actor, args.reason, execute=args.execute)
         else:
             out = getattr(dispatcher, args.command)(args.issue)
     except (Refusal, TransitionError) as exc:

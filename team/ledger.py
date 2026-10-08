@@ -30,8 +30,11 @@ MAIN_STATES: tuple[str, ...] = ("dispatched", "claimed", "completed", "validated
 SIDE_STATES: frozenset[str] = frozenset({
     "outcome_unknown", "validation_failed", "expired", "worker_unavailable", "reviewer_unavailable",
     "brief_stale", "frozen_by_launch_plan", "already_dispatched", "review_uncalibrated", "takeover", "refused",
-    "reviewed_awaiting_validation", "external_review", "review_rejected", "revision_started",
+    "reviewed_awaiting_validation", "external_review", "review_rejected", "revision_started", "intervention",
 })
+# خاتمةُ جولة التصحيح. و`outcome_unknown` ليست خاتمةً: المهلةُ تقيّدها والعاملُ حيّ، ثم قد يُختم بـ`worker_unavailable`
+# فلا يُحتسب (ملاحظة Codex P2 على 376699d8، #349)
+ROUND_CLOSING_STATES: tuple[str, ...] = ("completed", "validation_failed", "worker_unavailable")
 TERMINAL_STATES: frozenset[str] = frozenset({"accepted"})
 # مفاتيحُ الدليل اللازمة لكل حالة؛ غيابُ واحدٍ منها يُرفض قبل الكتابة.
 EVIDENCE: dict[str, tuple[str, ...]] = {
@@ -41,6 +44,8 @@ EVIDENCE: dict[str, tuple[str, ...]] = {
     "validated": ("head_sha", "checks_ref"),
     "verified": ("head_sha", "review_ref", "reviewer", "reviewer_family"),
     "accepted": ("head_sha", "merge_sha"),
+    # كتابةٌ على فرع مهمّةٍ من خارج المرسِل: من كتب، وأيَّ رأس، ولماذا (تقييم المرحلة ٢ من ق٧٦)
+    "intervention": ("head_sha", "actor", "reason"),
     "outcome_unknown": ("reason",),
     "validation_failed": ("reason",),
     "expired": ("last_activity_at",),
@@ -129,6 +134,19 @@ class TeamLedger:
         return state
 
     # — كتابة —
+
+    def head_receipted(self, issue: int, attempt: int, head: str) -> bool:
+        """رأسٌ جديد على فرع المحاولة له إيصال: إمّا قيدُ `intervention` بهذا الرأس، وإمّا جولةُ تصحيحٍ مفتوحة لعامل المرسِل نفسِه
+        لم تُختم بعد (دفع العاملُ ثم انقطع المرسِل قبل القيد). وما سوى ذلك كتابةٌ من خارج المرسِل بلا إيصال."""
+        records = [r for r in self.records(issue) if r.get("attempt") == attempt]
+        if any(r["state"] == "intervention" and r.get("head_sha") == head for r in records):
+            return True
+        starts = [i for i, r in enumerate(records) if r["state"] == "revision_started"]
+        if not starts:
+            return False
+        last = records[starts[-1]]
+        return not any(r["state"] in ROUND_CLOSING_STATES and last.get("round") in (r.get("round"), r.get("revision_round"))
+                       for r in records[starts[-1] + 1:])
 
     @property
     def lock_path(self) -> Path:

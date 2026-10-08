@@ -213,3 +213,17 @@ def test_a_revision_round_needs_its_evidence(tmp_path):
     assert exc.value.code == "evidence_missing:round"
     ledger.append(7, "revision_started", round=1, pid=1, started_at="2026-10-06T10:00:00+00:00", brief_sha256="b" * 64, reason_ref="c-1")
     assert ledger.last(7)["state"] == "revision_started"
+
+
+def test_an_intervention_names_its_head_actor_and_reason(tmp_path):
+    ledger = _ledger(tmp_path)
+    _dispatch(ledger)
+    ledger.append(7, "completed", head_sha="a" * 40, branch="team/7-anthropic", pr=9)
+    for missing in ("head_sha", "actor", "reason"):
+        evidence = {"head_sha": "b" * 40, "actor": "anthropic/x", "reason": "تصحيح"}
+        evidence.pop(missing)
+        with pytest.raises(TransitionError) as exc:
+            ledger.append(7, "intervention", **evidence)
+        assert exc.value.code == f"evidence_missing:{missing}"
+    ledger.append(7, "intervention", head_sha="b" * 40, actor="anthropic/x", reason="تصحيح")
+    assert ledger.head_receipted(7, 1, "b" * 40) and not ledger.head_receipted(7, 1, "c" * 40)

@@ -248,6 +248,7 @@ def test_a_doctor_refusal_of_one_candidate_falls_to_the_next(tmp_path):
 def test_a_corrected_head_is_recorded_before_the_review_is_counted(tmp_path):
     reviewer, project, adapters, ledger = _setup(tmp_path)
     _dispatched(ledger, "0" * 40)
+    ledger.append(41, "intervention", head_sha=project.pulls[9].head_sha, actor="anthropic/claude-opus-5-5", reason="تصحيحٌ خارجيّ")
     out = reviewer.review(9, execute=True)
     assert out["status"] == "reviewed_awaiting_validation"
     completed = ledger.last_of(41, "completed")
@@ -406,3 +407,14 @@ def test_a_platform_failure_in_the_cli_is_a_named_unavailability_not_a_traceback
     out = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
     assert rc == 3 and out == {"status": "project_unavailable", "code": "gh_failed", "detail": "dial tcp: i/o timeout"}
     assert not (tmp_path / "home" / "dispatch.jsonl").read_text(encoding="utf-8").strip()
+
+
+def test_a_review_of_an_unreceipted_head_is_kept_but_not_counted(tmp_path):
+    """رأسٌ كُتب من خارج المرسِل بلا إيصال: المراجعةُ تُحفظ مراجعةً خارجية ولا تقيّد completed ولا تُحتسب (تقييم المرحلة ٢ من ق٧٦)."""
+    reviewer, project, adapters, ledger = _setup(tmp_path)
+    _dispatched(ledger, "0" * 40)
+    out = reviewer.review(9, execute=True)
+    assert out["status"] == "unreceipted_commits"
+    assert ledger.last_of(41, "completed")["head_sha"] == "0" * 40
+    last = ledger.records(41)[-1]
+    assert last["state"] == "external_review" and last["code"] == "unreceipted_commits"

@@ -221,6 +221,7 @@ def test_validate_picks_up_a_corrected_head(tmp_path):
     pull = project.pulls[out["pr"]]
     project.pulls[out["pr"]] = PullRequest(pull.number, "b" * 40, "main", pull.branch, 41)
     project.checks_by_head["b" * 40] = "success"
+    dispatcher.intervene(41, "b" * 40, "anthropic/claude-opus-5-5", "تصحيحٌ خارجيّ", execute=True)
     assert dispatcher.validate(41) == {"status": "validated", "head_sha": "b" * 40}
     assert ledger.last_of(41, "completed")["superseded_head"] == out["head_sha"]
 
@@ -719,6 +720,7 @@ def test_a_dry_run_revise_does_not_record_a_moved_head(tmp_path):
     out, ref = _rejected(dispatcher, project, ledger)
     pull = project.pulls[out["pr"]]
     project.pulls[out["pr"]] = PullRequest(pull.number, "f" * 40, "main", pull.branch, 41, url=pull.url)     # الرأسُ البعيد تقدّم
+    dispatcher.intervene(41, "f" * 40, "anthropic/claude-opus-5-5", "تصحيحٌ خارجيّ", execute=True)
     before = len(ledger.records(41))
     with pytest.raises(Refusal) as exc:
         dispatcher.revise(41)                                   # المراجعةُ الرافضة كانت على الرأس القديم؛ الجديدُ بلا مراجعة
@@ -948,6 +950,7 @@ def test_a_revision_behind_an_external_correction_is_not_a_completion(tmp_path):
     git("push", "-q", "origin", out["branch"], cwd=other)
     remote_head = git("rev-parse", "HEAD", cwd=other)
     project.pulls[out["pr"]] = PullRequest(out["pr"], remote_head, "main", out["branch"], 41, url=project.pulls[out["pr"]].url)
+    dispatcher.intervene(41, remote_head, "anthropic/x", "تصحيحٌ خارجيّ", execute=True)
     ledger.append(41, "review_rejected", head_sha=remote_head, review_ref=project.comment(out["pr"], "عيب\nالحكم: يحتاج تصحيحًا"),
                   reviewer="codex", reviewer_family="openai", verdict="revise")
     adapter.behaviour = "nothing"
@@ -1110,6 +1113,7 @@ def test_revise_brings_the_worktree_to_the_rejected_head_before_launching(tmp_pa
     git("push", "-q", "origin", out["branch"], cwd=other)
     remote_head = git("rev-parse", "HEAD", cwd=other)
     project.pulls[out["pr"]] = PullRequest(out["pr"], remote_head, "main", out["branch"], 41, url=project.pulls[out["pr"]].url)
+    dispatcher.intervene(41, remote_head, "anthropic/x", "تصحيحٌ خارجيّ", execute=True)
     ledger.append(41, "review_rejected", head_sha=remote_head, review_ref=project.comment(out["pr"], "عيب\nالحكم: يحتاج تصحيحًا"),
                   reviewer="codex", reviewer_family="openai", verdict="revise")
     done = dispatcher.revise(41, execute=True)
@@ -1205,3 +1209,51 @@ def test_a_timed_out_round_later_lost_to_quota_does_not_count_toward_the_cap(tmp
     assert dispatcher.counted_rounds(41, 1) == 1          # جولةٌ معلّقة تُحتسب حتى تُختم
     ledger.append(41, "worker_unavailable", code="quota_exhausted", round=1)
     assert dispatcher.counted_rounds(41, 1) == 0
+
+
+# — إيصالُ التدخّل (تقييم المرحلة ٢ من ق٧٦: ١٩ إيداعًا من خارج المرسِل دخلت السجلَّ بلا كاتب) —
+
+def test_an_unreceipted_head_is_refused_not_adopted(tmp_path):
+    dispatcher, project, _adapter, ledger, _repo = _setup(tmp_path)
+    out = dispatcher.run(41, execute=True)
+    pull = project.pulls[out["pr"]]
+    project.pulls[out["pr"]] = PullRequest(pull.number, "b" * 40, "main", pull.branch, 41)
+    project.checks_by_head["b" * 40] = "success"
+    before = len(ledger.records(41))
+    with pytest.raises(Refusal) as exc:
+        dispatcher.validate(41)
+    assert exc.value.code == "unreceipted_commits" and len(ledger.records(41)) == before
+    ledger.append(41, "intervention", head_sha="c" * 40, actor="anthropic/x", reason="رأسٌ آخر")     # إيصالٌ لرأسٍ غيره لا يكفي
+    with pytest.raises(Refusal):
+        dispatcher.validate(41)
+    dispatcher.intervene(41, "b" * 12, "anthropic/claude-opus-5-5", "تصحيحٌ خارجيّ", execute=True)
+    assert dispatcher.validate(41)["status"] == "validated"
+
+
+def test_intervene_names_its_actor_and_the_current_head_and_dry_runs_by_default(tmp_path):
+    dispatcher, project, _adapter, ledger, _repo = _setup(tmp_path)
+    out = dispatcher.run(41, execute=True)
+    pull = project.pulls[out["pr"]]
+    project.pulls[out["pr"]] = PullRequest(pull.number, "b" * 40, "main", pull.branch, 41)
+    for head, actor, reason, code in (("b" * 12, "claude", "سبب", "intervention_unnamed"),
+                                      ("b" * 12, "anthropic/x", "  ", "intervention_unnamed"),
+                                      ("c" * 12, "anthropic/x", "سبب", "head_not_current"),
+                                      ("b" * 5, "anthropic/x", "سبب", "head_not_current")):
+        with pytest.raises(Refusal) as exc:
+            dispatcher.intervene(41, head, actor, reason, execute=True)
+        assert exc.value.code == code
+    before = len(ledger.records(41))
+    assert dispatcher.intervene(41, "b" * 12, "anthropic/x", "سبب")["status"] == "dry_run"
+    assert len(ledger.records(41)) == before
+    done = dispatcher.intervene(41, "b" * 12, "anthropic/x", "سبب", execute=True)
+    assert done["status"] == "intervention_recorded" and ledger.last_of(41, "intervention")["head_sha"] == "b" * 40
+
+
+def test_an_open_revision_round_receipts_its_own_push_until_it_closes(tmp_path):
+    dispatcher, project, _adapter, ledger, _repo = _setup(tmp_path)
+    _rejected(dispatcher, project, ledger)
+    assert not ledger.head_receipted(41, 1, "d" * 40)
+    ledger.append(41, "revision_started", round=1, pid=os.getpid(), started_at="2026-10-06T10:00:00+00:00", brief_sha256="b" * 64, reason_ref="c-1")
+    assert ledger.head_receipted(41, 1, "d" * 40)
+    ledger.append(41, "worker_unavailable", code="quota_exhausted", round=1)
+    assert not ledger.head_receipted(41, 1, "d" * 40)
