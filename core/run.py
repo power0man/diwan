@@ -219,8 +219,14 @@ def execute(request: Request, provider, budget: Budget, ledger) -> Outcome:
             return Outcome(resp, req_digest, prior["digest"], replayed=True,
                            error_code=_response_error(resp) or rec.get("error_code"))
 
-    # ٥ — الحجز قبل النداء.
-    estimate = provider.estimate_micros(req)
+    # ٥ — الحجز قبل النداء. وتقديرٌ يرفضه المزوّد (نموذجٌ سحابيٌّ بلا سعرٍ مقروء) رفضٌ قبل الشبكة كغيره من الرفض: يُقيَّد ثم
+    # يُرفع كما هو، فلا تختفي المحاولةُ من السجلّ الدائم (ملاحظة Codex على #352).
+    try:
+        estimate = provider.estimate_micros(req)
+    except ProviderError as e:
+        ledger.append(_record("refused", req, req_digest, error_code=e.code,
+                              provider_name=str(getattr(provider, "name", "?"))))
+        raise
     handle = f"{req_digest}:{ledger.count()}:{len(ledger.entries())}"
     try:
         budget.reserve(handle, estimate)
