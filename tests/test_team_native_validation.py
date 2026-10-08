@@ -505,3 +505,29 @@ def test_changed_ci_on_the_same_head_during_source_fetch_requires_new_validation
             return result
         project.runner = changed_checks
         assert project.checks_with_review(pull, native_review=proof) == "failure"
+
+
+@pytest.mark.parametrize("negative", ["review_rejected", "review_uncalibrated"])
+def test_promoting_an_old_pending_pass_cannot_hide_a_new_actual_review(tmp_path, negative):
+    dispatcher, project, ledger, _ = _dispatch(tmp_path)
+    record_calibration(dispatcher.home, "codex", caught=1, of=2, false_alarms=0, model="fixture-model", clock=lambda: NOW)
+    reviewer = Reviewer(project, {}, ledger, tmp_path, home=dispatcher.home, clock=lambda: NOW)
+    append = ledger.append
+    def append_racing(issue, state, **fields):
+        if state == "verified":
+            model = "new-fixture-model" if negative == "review_uncalibrated" else "fixture-model"
+            verdict = "pass" if negative == "review_uncalibrated" else "reject"
+            assert reviewer._record(project.pulls[9], FakeAdapter(name="codex", family="openai", model=model),
+                                    HEAD, "newer-original-comment", verdict, execution_id="e" * 32) == negative
+        return append(issue, state, **fields)
+    ledger.append = append_racing
+    with pytest.raises(TransitionError, match="review_changed_before_verification"):
+        dispatcher.validate(41)
+    assert ledger.main_state(41)["state"] == "validated" and dispatcher.latest_review(41, HEAD)["state"] == negative
+    assert dispatcher.native_review(41, project.pulls[9]) is None
+    ledger.append = append
+    # A genuinely new calibrated native pass can supersede the negative judgment;
+    # only promotion of an older pending record carries the comparison constraint.
+    assert reviewer._record(project.pulls[9], FakeAdapter(name="codex", family="openai"), HEAD,
+                            "fresh-original-pass", "pass", execution_id="f" * 32) == "verified"
+    assert dispatcher.native_review(41, project.pulls[9]) is not None

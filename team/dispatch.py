@@ -381,6 +381,7 @@ class Dispatcher:
                 if native and pending and pending["state"] == "reviewed_awaiting_validation" and pending.get("verdict") == "pass":
                     self.ledger.append(issue_number, "verified", head_sha=head, review_ref=pending["review_ref"],
                                        reviewer=pending["reviewer"], reviewer_family=pending["reviewer_family"], verdict=pending.get("verdict"),
+                                       expected_review=pending,
                                        **{key: pending[key] for key in ("pr", "reviewer_model", "reviewer_identity", "reviewer_calibration", "review_execution_id")})
             return {"status": "validated", "head_sha": head}
         if status == "failure":

@@ -195,6 +195,9 @@ class TeamLedger:
             completed = self.last_of(issue, "completed", attempt)
             if completed is None or completed.get("head_sha") != evidence["head_sha"]:
                 raise TransitionError("head_mismatch", f"{state} على رأسٍ غير رأس completed")
+        if (state == "verified" and "expected_review" in evidence
+                and evidence["expected_review"] != self._latest_review_record(issue, attempt, evidence["head_sha"])):
+            raise TransitionError("review_changed_before_verification", "ترقية المراجعة القديمة لا تغطي حكمًا أحدث")
         if state == "accepted":
             validated = self.last_of(issue, "validated", attempt)
             verified = self.last_of(issue, "verified", attempt)
