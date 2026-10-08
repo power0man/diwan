@@ -12,7 +12,7 @@ import pytest
 from core import prices
 from core.budget import Budget
 from core.ledger import Ledger, LedgerCorrupt
-from evaluation.metered import FRAMING_TOKENS, MeteredTransport
+from evaluation.metered import FRAMING_TOKENS, MeteredTransport, ledger_report
 from evaluation.multi_system_review import AutomaticReviewError
 from tools import external_review as cli
 
@@ -366,3 +366,15 @@ def test_a_cost_above_the_reservation_is_settled_as_paid_and_stops_the_transport
     assert stopped.value.code == "price_exceeded_reservation" and transport.calls == 1 and _charged(metered) == 1000
     assert metered.spend_report()["core_run"]["exceeded_reservation"] == {
         "model": "priced", "estimate_micros": 534, "cost_micros": 1000}
+
+
+def test_the_ledger_report_trusts_only_an_anchored_chain(tmp_path):
+    """التقريرُ التراكميّ يُبنى من السجلّ المبصوم (ملاحظة Codex على #352)، فلا يُجمع إلا من سلسلةٍ تطابقها مرساتُها."""
+    transport = FakeTransport(*({"content": "a", "usage": {"prompt_tokens": 100, "completion_tokens": 50}},) * 2)
+    metered = _metered(tmp_path, transport)
+    assert [metered("priced", "s", "u", {}) for _ in (1, 2)] == ["a", "a"]
+    report = ledger_report(metered.ledger)
+    assert report["verified"] is True and [c["cost_micros"] for c in report["calls"]] == [200, 200]
+    assert report["settled_usd"] == "0.0004" and report["entries"] == 2 and report["refusals"] == []
+    metered.ledger.append({"kind": "ok", "settled_micros": 0})
+    assert ledger_report(metered.ledger)["verified"] is False

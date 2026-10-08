@@ -53,6 +53,44 @@ def _enforced_max_output(transport, requested: int | None) -> int:
     return enforced
 
 
+def check_anchored(ledger) -> None:
+    """السجلُّ سلسلةٌ مبصومةٌ تطابق مرساتُها عددَه ورأسَه، وإلا `LedgerCorrupt`؛ والفارغُ بلا مرساةٍ بدايةٌ سليمة. والمطابقةُ للسجلّ كلِّه
+    لا لما قبل المرساة وحده: قيودٌ صالحةُ السلسلة بعد آخر مرساة (انهيارٌ أو تحريرٌ يدويّ) كان يُرسّيها النداءُ التالي فتصير مشروعة
+    (ملاحظة Codex على #352). والعدُّ يقرأ السجلّ، فالتالفُ يرفع هنا `LedgerCorrupt` أو `UnicodeDecodeError`."""
+    if ledger.anchor_path.exists() or ledger.count():
+        ledger.verify_chain(strict=True)
+        anchor = ledger.read_anchor()
+        if (anchor["count"], anchor["head"]) != (ledger.count(), ledger.head()):
+            raise LedgerCorrupt(f"قيودٌ بعد المرساة لم تُرسَّ: المرساة {anchor['count']} والسجلّ {ledger.count()}")
+
+
+def ledger_report(ledger) -> dict:
+    """التقريرُ التراكميّ من سجلّ `core.run` المبصوم نفسِه لا من خلاصةٍ تُعاد كتابتُها: تشغيلٌ سقط قبل كتابة الخلاصة، أو إعادةٌ تتخطّى
+    ما رُوجع، لا يُسقط نداءً قيّده السجلّ (ملاحظة Codex على #352). ويُتحقَّق منه بمرساته أوّلًا، فسجلٌّ تالفٌ لا يُجمع منه شيء."""
+    report = {"ledger": str(ledger.path)}
+    try:
+        check_anchored(ledger)
+        entries = ledger.entries()
+    except (LedgerCorrupt, UnicodeDecodeError) as exc:
+        return {**report, "verified": False, "code": "spend_ledger_corrupt", "detail": str(exc)}
+    calls, refusals = [], []
+    for entry in entries:
+        record = entry["record"]
+        if record.get("kind") == "ok":
+            usage = (record.get("response") or {}).get("usage") or {}
+            calls.append({"seq": entry["seq"], "model": record.get("model"), "estimate_micros": record.get("estimate_micros"),
+                          "cost_micros": record.get("settled_micros") or 0, "prompt_tokens": usage.get("input_tokens"),
+                          "completion_tokens": usage.get("output_tokens")})
+        else:
+            refusals.append({"seq": entry["seq"], "model": record.get("model"), "code": record.get("error_code"),
+                             "settled_micros": record.get("settled_micros") or 0})
+    on_errors = sum(refusal["settled_micros"] for refusal in refusals)
+    settled = sum(call["cost_micros"] for call in calls) + on_errors
+    return {**report, "verified": True, "entries": len(entries), "head": ledger.head(), "calls": calls,
+            "refusals": refusals, "settled_usd": str(Decimal(settled) / MICROS_PER_USD),
+            "settled_on_errors_micros": on_errors}
+
+
 class MeteredProvider:
     """مزوّدٌ غيرُ محليّ يغلّف نقلًا واحدًا لطلبٍ واحد؛ يُبنى لكل نداء ويُستهلك مرّة."""
 
@@ -190,14 +228,8 @@ class MeteredTransport:
         """يُتحقَّق من السجلّ بمرساته قبل أي قيدٍ جديد: كان قيدٌ جديدٌ ومرساتُه بعده يمحوان قصَّ ذيلٍ سابق، فيمرّ التحقّقُ الصارم
         بعدهما ويختفي قيدُ إنفاقٍ محذوف (ملاحظة Codex على #352). وسجلٌّ فيه قيودٌ بلا مرساة يُرفض كذلك؛ والفارغُ بلا مرساةٍ بدايةٌ."""
         # والعدُّ نفسُه يقرأ السجلّ: سجلٌّ تالفٌ بلا مرساة يُرفض بالاسم نفسِه لا استثناءً خامًا (ملاحظة Codex على #352)
-        # والمرساةُ تطابق السجلَّ كلَّه لا ما قبلها وحده: قيودٌ صالحةُ السلسلة بعد آخر مرساة (انهيارٌ أو تحريرٌ يدويّ) كانت
-        # يُرسّيها النداءُ التالي فتصير مشروعة (ملاحظة Codex على #352)
         try:
-            if self.ledger.anchor_path.exists() or self.ledger.count():
-                self.ledger.verify_chain(strict=True)
-                anchor = self.ledger.read_anchor()
-                if (anchor["count"], anchor["head"]) != (self.ledger.count(), self.ledger.head()):
-                    raise LedgerCorrupt(f"قيودٌ بعد المرساة لم تُرسَّ: المرساة {anchor['count']} والسجلّ {self.ledger.count()}")
+            check_anchored(self.ledger)
         except (LedgerCorrupt, UnicodeDecodeError) as exc:
             raise AutomaticReviewError("spend_ledger_corrupt", str(exc)) from exc
 

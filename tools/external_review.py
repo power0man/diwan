@@ -1570,20 +1570,15 @@ def _core_run(transport) -> dict:
     return {"core_run": core_run} if core_run else {}
 
 
-def _merged_core_run(prior, transport) -> dict:
-    """تقريرُ `core.run` في خلاصة البنك تراكميٌّ كسجلّ النداءات: إعادةُ التشغيل تتخطّى ما رُوجع فتقريرُها فارغ، فيُضاف إلى ما حملته
-    الخلاصةُ السابقة ولا يستبدله (ملاحظة Codex على #352). والمسوّى مجموعُ الاثنين، والسجلُّ المبصوم نفسُه يحمل القيودَ كلَّها."""
+def _bank_core_run(ledger_path: Path, transport) -> dict:
+    """تقريرُ `core.run` في خلاصة البنك تراكميٌّ من السجلّ المبصوم نفسِه (`ledger_report`)، ومعه تقريرُ هذا التشغيل في `last_run`:
+    فإعادةٌ تتخطّى ما رُوجع، أو تشغيلٌ سقط قبل كتابة الخلاصة، لا يُسقط نداءً قيّده السجلّ (ملاحظتا Codex على #352)."""
+    from core.ledger import Ledger
+    from evaluation.metered import ledger_report
     now = _core_run(transport).get("core_run")
-    if not isinstance(prior, dict):
+    if not ledger_path.is_file():
         return {"core_run": now} if now else {}
-    calls = [c for c in prior.get("calls") or [] if isinstance(c, dict) and type(c.get("cost_micros")) is int]
-    refusals = [r for r in prior.get("refusals") or [] if isinstance(r, dict) and type(r.get("settled_micros")) is int]
-    calls += (now or {}).get("calls", [])
-    refusals += (now or {}).get("refusals", [])
-    on_errors = sum(r["settled_micros"] for r in refusals)
-    settled = Decimal(sum(c["cost_micros"] for c in calls) + on_errors) / 1_000_000
-    return {"core_run": {**prior, **(now or {}), "calls": calls, "refusals": refusals, "settled_usd": str(settled),
-                         "settled_on_errors_micros": on_errors}}
+    return {"core_run": {**ledger_report(Ledger(ledger_path, create=False)), **({"last_run": now} if now else {})}}
 
 
 def _persist_provider_usage(bank: Path, usage: list[dict], spend: dict | None = None) -> None:
@@ -1806,9 +1801,9 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("مجلّد البنك مطلوب، أو --smoke")
     # ودليلُ مجانيةٍ حفظته الواجهاتُ المجانية على البنك نفسِه يبقى مع نداءاته في السجلّ والخلاصة (ملاحظة Codex على #298)
     prior, prior_evidence = prior_provider_usage(args.bank), prior_zero_spend_evidence(args.bank)
-    prior_core_run = _prior_summary(args.bank).get("core_run")
+    ledger_path = _ledger_path(args)
     try:
-        transport = build_transport(base_url, ledger_path=_ledger_path(args))
+        transport = build_transport(base_url, ledger_path=ledger_path)
         try:
             counts = review_bank(args.bank, reviewers, transport, brief_path=args.brief)
         finally:
@@ -1829,7 +1824,7 @@ def main(argv: list[str] | None = None) -> int:
     _persist_provider_usage(args.bank, ledger, {"token_totals": token_totals(ledger),
                                                 "cost_unconfirmed_attempts": cost_unconfirmed_attempts(ledger),
                                                 **({"zero_spend_evidence": prior_evidence} if prior_evidence else {}),
-                                                **_merged_core_run(prior_core_run, transport)})
+                                                **_bank_core_run(ledger_path, transport)})
     print(json.dumps({
         "status": "failed" if counts["failed"] else "reviewed",
         **counts,
