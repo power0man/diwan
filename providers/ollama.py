@@ -20,6 +20,7 @@
 """
 from __future__ import annotations
 
+import dataclasses
 import json
 import urllib.error
 import urllib.request
@@ -153,7 +154,17 @@ class OllamaProvider:
                 out = self._post(payload, request.deadline_s)
             else:
                 raise
-        return self._to_response(out, request=request)
+        response = self._to_response(out, request=request)
+        if self.is_local:
+            return response
+        # غيرُ المحليّ يُسوّى بتوكناته وسعرِ المدخل نفسِه الذي حُجز عليه، لا بصفر المحليّ في الترميز: مدخلٌ مسعَّرٌ بالتوكن كان يُحجز
+        # ثم يُعاد محجوزُه كلُّه فيُقيَّد صفرًا ولا يحدّ السقفُ شيئًا (ملاحظة Codex على #352). والاشتراكُ الثابت صفرٌ بأساسه كما كان
+        try:
+            entry = prices.lookup(prices.load(), "ollama", self.model)
+            cost = prices.micros(entry, response.usage.input_tokens, response.usage.output_tokens)
+        except (prices.PriceUnknown, prices.PricesMalformed) as e:
+            raise ProviderError("price_unknown", f"لا سعرَ مقروءًا للنموذج السحابيّ: {e}", retryable=False) from e
+        return dataclasses.replace(response, cost_micros=cost)
 
     _messages = staticmethod(serialize_messages)
 

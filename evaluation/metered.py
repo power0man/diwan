@@ -182,9 +182,14 @@ class MeteredTransport:
         """يُتحقَّق من السجلّ بمرساته قبل أي قيدٍ جديد: كان قيدٌ جديدٌ ومرساتُه بعده يمحوان قصَّ ذيلٍ سابق، فيمرّ التحقّقُ الصارم
         بعدهما ويختفي قيدُ إنفاقٍ محذوف (ملاحظة Codex على #352). وسجلٌّ فيه قيودٌ بلا مرساة يُرفض كذلك؛ والفارغُ بلا مرساةٍ بدايةٌ."""
         # والعدُّ نفسُه يقرأ السجلّ: سجلٌّ تالفٌ بلا مرساة يُرفض بالاسم نفسِه لا استثناءً خامًا (ملاحظة Codex على #352)
+        # والمرساةُ تطابق السجلَّ كلَّه لا ما قبلها وحده: قيودٌ صالحةُ السلسلة بعد آخر مرساة (انهيارٌ أو تحريرٌ يدويّ) كانت
+        # يُرسّيها النداءُ التالي فتصير مشروعة (ملاحظة Codex على #352)
         try:
             if self.ledger.anchor_path.exists() or self.ledger.count():
                 self.ledger.verify_chain(strict=True)
+                anchor = self.ledger.read_anchor()
+                if (anchor["count"], anchor["head"]) != (self.ledger.count(), self.ledger.head()):
+                    raise LedgerCorrupt(f"قيودٌ بعد المرساة لم تُرسَّ: المرساة {anchor['count']} والسجلّ {self.ledger.count()}")
         except (LedgerCorrupt, UnicodeDecodeError) as exc:
             raise AutomaticReviewError("spend_ledger_corrupt", str(exc)) from exc
 

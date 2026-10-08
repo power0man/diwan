@@ -5,6 +5,9 @@ from __future__ import annotations
 import pytest
 
 from core import prices
+from core.budget import Budget
+from core.ledger import Ledger
+from core.run import execute
 from core.contracts import Message, Request
 from evaluation.external_review import DEFAULT_REVIEWERS
 from providers.base import ProviderError
@@ -101,3 +104,28 @@ def test_ollama_estimate_rejects_a_non_request_for_a_cloud_provider_before_netwo
     with pytest.raises(ProviderError) as unpriced:
         OllamaProvider("cloud-unlisted:7b").estimate_micros(_request("m"))
     assert unpriced.value.code == "price_unknown"
+
+
+def test_a_priced_remote_ollama_call_settles_its_tokens_not_zero(monkeypatch, tmp_path):
+    """ملاحظة Codex على #352: الترميزُ يعيد `cost_micros=0` لكل ردّ، فنموذجٌ غيرُ محليٍّ بمدخلٍ مسعَّرٍ بالتوكن كان يُحجز له ثم
+    يُعاد محجوزُه كلُّه ويُقيَّد صفرًا، فلا يحدّ السقفُ شيئًا. فالآن يُسوّى بتوكناته وسعر المدخل نفسِه."""
+    table = {"schema_version": 1, "unit": prices.UNIT, "entries": {"ollama/m": _entry(input=1000, output=2000)}}
+    monkeypatch.setattr(prices, "load", lambda *a, **k: table)
+    provider = OllamaProvider("m", "https://ollama.com")
+    monkeypatch.setattr(provider, "_post", lambda payload, timeout: {
+        "model": "m", "message": {"role": "assistant", "content": "a"}, "done": True, "done_reason": "stop",
+        "prompt_eval_count": 100, "eval_count": 50})
+    budget = Budget(day_remaining_micros=10 ** 6, month_remaining_micros=10 ** 6)
+    ledger = Ledger(tmp_path / "ledger.jsonl")
+    outcome = execute(_request("m"), provider, budget, ledger)
+    assert outcome.response.cost_micros == 200 and 10 ** 6 - budget.day_remaining_micros == 200
+    assert [e["record"]["settled_micros"] for e in ledger.entries()] == [200]
+    # والاشتراكُ الثابت يبقى صفرًا بأساسه، والمحليُّ لا يقرأ الجدول
+    flat = OllamaProvider("deepseek-v4.1-flash:cloud")
+    monkeypatch.setattr(prices, "load", lambda *a, **k: {"schema_version": 1, "unit": prices.UNIT, "entries": {
+        "ollama/*:cloud": {"basis": "subscription_flat", "read_at": "2026-10-08", "source": "https://example.test",
+                           "source_kind": "provider_page"}}})
+    monkeypatch.setattr(flat, "_post", lambda payload, timeout: {
+        "model": "deepseek-v4.1-flash:cloud", "message": {"role": "assistant", "content": "a"}, "done": True, "done_reason": "stop",
+        "prompt_eval_count": 100, "eval_count": 50})
+    assert flat.complete(_request("deepseek-v4.1-flash:cloud")).cost_micros == 0

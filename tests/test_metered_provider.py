@@ -318,3 +318,35 @@ def test_a_malformed_unanchored_ledger_is_a_named_refusal(tmp_path):
     with pytest.raises(AutomaticReviewError) as refused:
         metered("priced", "s", "u", {})
     assert refused.value.code == "spend_ledger_corrupt" and transport.calls == 0 and _charged(metered) == 0
+
+
+def test_entries_beyond_the_anchor_are_refused_not_anchored(tmp_path):
+    """ملاحظة Codex على #352: قيدٌ صالحُ السلسلة أُلحق بعد آخر مرساة يمرّ `verify_chain(strict=True)` لأنه لا يرفض إلا نقصًا،
+    فكان النداءُ التالي يرسّيه فيصير مشروعًا. فالآن تطابق المرساةُ عددَ السجلّ ورأسَه قبل أي نداء."""
+    transport = FakeTransport(*({"content": "a", "usage": {"prompt_tokens": 100, "completion_tokens": 50}},) * 2)
+    metered = _metered(tmp_path, transport)
+    assert metered("priced", "s", "u", {}) == "a"
+    metered.ledger.append({"kind": "ok", "note": "appended after the anchor"})
+    assert metered.ledger.verify_chain(strict=True)
+    with pytest.raises(AutomaticReviewError) as refused:
+        metered("priced", "s", "u", {})
+    assert refused.value.code == "spend_ledger_corrupt" and transport.calls == 1
+    assert metered.ledger.read_anchor()["count"] == 1 and len(metered.ledger.entries()) == 2
+
+
+def test_a_ledger_edited_in_the_middle_is_refused_before_the_next_call(tmp_path):
+    """ملاحظة Codex على #352: مطابقةُ المرساة لعدد السجلّ ورأسه لا تكشف تحريرَ قيدٍ قبل الأخير؛ والسلسلةُ المبصومة تكشفه، فيُتحقَّق
+    منها بصرامةٍ قبل أي نداء، لا من المرساة وحدها."""
+    transport = FakeTransport(*({"content": "a", "usage": {"prompt_tokens": 100, "completion_tokens": 50}},) * 3)
+    metered = _metered(tmp_path, transport)
+    assert [metered("priced", "s", "u", {}) for _ in (1, 2)] == ["a", "a"]
+    path = metered.ledger.path
+    lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
+    first = json.loads(lines[0])
+    first["record"]["settled_micros"] = 0
+    path.write_text(json.dumps(first) + "\n" + "".join(lines[1:]), encoding="utf-8")
+    anchor = metered.ledger.read_anchor()
+    assert (anchor["count"], anchor["head"]) == (metered.ledger.count(), metered.ledger.head())
+    with pytest.raises(AutomaticReviewError) as refused:
+        metered("priced", "s", "u", {})
+    assert refused.value.code == "spend_ledger_corrupt" and transport.calls == 2
