@@ -233,6 +233,12 @@ class Reviewer:
                                reviewer=adapter.spec.name, reviewer_family=family, verdict=verdict, attempt=stale_attempt,
                                stale_attempt=bool(stale_attempt), current_attempt=(state or {}).get("attempt"))
             return "external_review"
+        if state["state"] in ("completed", "validated", "verified") and completed.get("head_sha") != head \
+                and not self.ledger.head_receipted(issue, state["attempt"], head):
+            # رأسٌ كُتب من خارج المرسِل بلا إيصال: تُحفظ المراجعةُ ولا تُحتسب للمهمّة حتى يُسجَّل التدخّل (تقييم المرحلة ٢ من ق٧٦)
+            self.ledger.append(issue, "external_review", pr=pull.number, head_sha=head, review_ref=ref, reviewer=adapter.spec.name,
+                               reviewer_family=family, verdict=verdict, code="unreceipted_commits")
+            return "unreceipted_commits"
         if state["state"] in ("completed", "validated", "verified") and completed.get("head_sha") != head:
             # رأسٌ مصحَّح دُفع بعد completed: يُقيَّد completed جديد فيسقط ما قبله (ملاحظة Codex على #344)
             self.ledger.append(issue, "completed", head_sha=head, branch=completed["branch"], pr=pull.number, pr_url=pull.url,
