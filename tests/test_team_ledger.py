@@ -201,3 +201,22 @@ def test_accepted_is_refused_after_a_later_rejection_on_the_same_head(tmp_path):
     with pytest.raises(TransitionError) as exc:
         ledger.append(7, "accepted", head_sha=head, merge_sha="m" * 40)
     assert exc.value.code == "review_rejected_after_verified"
+
+
+def test_accepted_is_refused_after_a_later_uncalibrated_pass_under_lock(tmp_path):
+    ledger = _ledger(tmp_path)
+    _dispatch(ledger)
+    head = "a" * 40
+    ledger.append(7, "completed", head_sha=head, branch="team/7-anthropic")
+    ledger.append(7, "validated", head_sha=head, checks_ref="checks:a")
+    ledger.append(7, "verified", head_sha=head, review_ref="c-1", reviewer="codex", reviewer_family="openai")
+    ledger.append(7, "review_uncalibrated", head_sha=head, reviewer="codex", verdict="pass")
+    with pytest.raises(TransitionError, match="review_uncalibrated_after_verified"):
+        ledger.append(7, "accepted", head_sha=head, merge_sha="m" * 40)
+    assert ledger.main_state(7)["state"] == "verified"
+    # A later newly verified review on the same head supersedes the uncalibrated event.
+    ledger.append(7, "completed", head_sha=head, branch="team/7-anthropic")
+    ledger.append(7, "validated", head_sha=head, checks_ref="checks:a")
+    ledger.append(7, "verified", head_sha=head, review_ref="c-3", reviewer="codex", reviewer_family="openai")
+    ledger.append(7, "accepted", head_sha=head, merge_sha="m" * 40)
+    assert ledger.main_state(7)["state"] == "accepted"

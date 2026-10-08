@@ -411,9 +411,14 @@ class Dispatcher:
         native = self.native_review(issue_number, pull)
         if native is None:
             raise Refusal("native_review_unproven")
+        review_snapshot = self.latest_review(issue_number, pull.head_sha)
         if self.project.checks_with_review(pull, native_review=native) != "success":
             raise Refusal("checks_not_validated_at_acceptance")
-        self.ledger.append(issue_number, "accepted", head_sha=state["head_sha"], merge_sha=merge)
+        if (self.native_review(issue_number, pull) != native
+                or self.latest_review(issue_number, pull.head_sha) != review_snapshot):
+            raise Refusal("native_review_changed_at_acceptance")
+        self.ledger.append(issue_number, "accepted", head_sha=state["head_sha"], merge_sha=merge,
+                           expected_review=review_snapshot)
         return {"status": "accepted", "merge_sha": merge}
 
     def _recover_claim(self, issue_number: int, dispatched: dict) -> dict:

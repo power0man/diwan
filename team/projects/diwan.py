@@ -58,7 +58,18 @@ if (native["identity"] != identity or not isinstance(entry, dict) or entry.get("
     raise ValueError("native_identity_not_in_trusted_main")
 families = review.author_families(data["commits"], registry)
 reviews = review.chronological(data["reviews"] + review.clean_comment_reviews(data["comments"], data["head"]))
-print(json.dumps(review.evaluate(families, reviews, data["head"], reviewers)))
+latest_formal = {}
+for item in review.chronological(data["reviews"]):
+    if item.get("commit_id") == data["head"]:
+        login = (item.get("user") or {}).get("login")
+        state = item.get("state")
+        if not isinstance(login, str) or not login or state not in ("APPROVED", "COMMENTED", "CHANGES_REQUESTED", "DISMISSED"):
+            raise ValueError("native_formal_review_unknown")
+        latest_formal[login] = state
+result = review.evaluate(families, reviews, data["head"], reviewers)
+# Same-family and unlisted reviewers are not counted, but their formal rejection still blocks.
+result["formal_blocking"] = sorted(login for login, state in latest_formal.items() if state == "CHANGES_REQUESTED")
+print(json.dumps(result))
 '''
 
 
@@ -322,7 +333,7 @@ class DiwanProject(ProjectAdapter):
                 raise GhError("native_review_evaluation_invalid") from exc
         if (not isinstance(result, dict) or result.get("schema_version") != 1 or result.get("head") != pull.head_sha
                 or not all(isinstance(result.get(key), list) and all(isinstance(item, str) for item in result[key])
-                           for key in ("author_families", "counted", "blocking", "same_family"))):
+                           for key in ("author_families", "counted", "blocking", "same_family", "formal_blocking"))):
             raise GhError("native_review_evaluation_invalid")
         return result
 
@@ -358,6 +369,18 @@ class DiwanProject(ProjectAdapter):
         return (isinstance(app, dict) and run.get("head_sha") == head
                 and app.get("id") == GITHUB_ACTIONS_APP and app.get("slug") == "github-actions")
 
+    def _formal_reviews_clear(self, pull: PullRequest) -> bool:
+        latest = {}
+        for item in self._pages(f"pulls/{pull.number}/reviews"):
+            if item.get("commit_id") == pull.head_sha:
+                user = item.get("user")
+                login = user.get("login") if isinstance(user, dict) else None
+                state = item.get("state")
+                if not isinstance(login, str) or not login or state not in ("APPROVED", "COMMENTED", "CHANGES_REQUESTED", "DISMISSED"):
+                    return False
+                latest[login] = state
+        return "CHANGES_REQUESTED" not in latest.values()
+
     def _missing_bot_failure(self, run: dict, pull: PullRequest, match, proof: NativeReview) -> bool:
         job = self._json("api", f"repos/{self.repo}/actions/jobs/{match.group(2)}")
         if (not isinstance(job, dict) or job.get("head_sha") != pull.head_sha
@@ -384,9 +407,13 @@ class DiwanProject(ProjectAdapter):
             if isinstance(report, dict) and report.get("schema_version") == 1 and "author_families" in report:
                 reports.append(report)
         return (len(reports) == 1 and reports[0].get("status") == "failed"
-                and reports[0].get("head") == pull.head_sha and reports[0].get("code") == "no_review_from_another_family"
+                and reports[0].get("head") == pull.head_sha
+                and reports[0].get("code") in ("no_review_from_another_family", "reviewed_only_by_the_author_family")
                 and reports[0].get("author_families") == list(proof.author_families)
-                and reports[0].get("counted") == [] and reports[0].get("blocking") == [] and reports[0].get("same_family") == [])
+                and reports[0].get("counted") == [] and reports[0].get("blocking") == []
+                and isinstance(reports[0].get("same_family"), list)
+                and all(isinstance(item, str) and item for item in reports[0]["same_family"])
+                and bool(reports[0]["same_family"]) == (reports[0]["code"] == "reviewed_only_by_the_author_family"))
 
     def checks_with_review(self, pull: PullRequest, *, native_review: NativeReview | None = None) -> str:
         if native_review is None:
@@ -430,19 +457,26 @@ class DiwanProject(ProjectAdapter):
                     return "failure"
                 workflow = self._json("api", f"repos/{self.repo}/actions/runs/{match.group(1)}")
                 if (not isinstance(workflow, dict) or workflow.get("head_sha") != pull.head_sha
-                        or workflow.get("path") != FAMILY_WORKFLOW or workflow.get("event") != "pull_request"
+                        or workflow.get("path") != FAMILY_WORKFLOW or workflow.get("event") not in ("pull_request", "pull_request_review")
                         or workflow.get("check_suite_id") != (run.get("check_suite") or {}).get("id")):
                     return "failure"
         result = self._trusted_family_result(pull, proof)
         families = set(result.get("author_families") or [])
         policy = self.review_policy(families)
         if (not families or families != set(proof.author_families) or proof.reviewer_family in families
-                or proof.reviewer not in policy.candidates or proof.reviewer in policy.never or result.get("blocking")):
+                or proof.reviewer not in policy.candidates or proof.reviewer in policy.never
+                or result.get("blocking") or result.get("formal_blocking")):
             return "failure"
-        if failed and (result.get("status") != "failed" or result.get("code") != "no_review_from_another_family"
-                       or result.get("same_family") or result.get("counted")):
+        if failed and (result.get("status") != "failed"
+                       or result.get("code") not in ("no_review_from_another_family", "reviewed_only_by_the_author_family")
+                       or bool(result.get("same_family")) != (result.get("code") == "reviewed_only_by_the_author_family")
+                       or result.get("counted")):
             return "failure"
         if not failed and (result.get("status") != "passed" or result.get("code") != "reviewed_by_another_family"):
+            return "failure"
+        # Reads above can take minutes; recheck mutable comments and findings before reporting success.
+        if (not self._native_comment_matches(pull, proof) or not self._review_threads_resolved(pull)
+                or not self._formal_reviews_clear(pull)):
             return "failure"
         current = self.pull(pull.number)
         return "success" if current.head_sha == pull.head_sha and current.branch == pull.branch else "failure"
