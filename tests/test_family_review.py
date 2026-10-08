@@ -466,7 +466,7 @@ PARTIAL = json.dumps({"data": {"repository": {"pullRequest": {"reviewThreads": {
 
 @pytest.mark.parametrize("failure,code", [
     pytest.param(OSError("down"), "threads_unreachable", id="unreachable"),
-    pytest.param(b'{"errors": [{"message": "nope"}]}', "threads_malformed", id="malformed"),
+    pytest.param(b'{"data": {"repository": null}}', "threads_malformed", id="malformed"),
     pytest.param(PARTIAL, "threads_partial", id="partial"),
 ])
 def test_unreadable_threads_fail_closed(monkeypatch, failure, code):
