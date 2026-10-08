@@ -478,6 +478,9 @@ class DiwanProject(ProjectAdapter):
         if (not self._native_comment_matches(pull, proof) or not self._review_threads_resolved(pull)
                 or not self._formal_reviews_clear(pull)):
             return "failure"
+        fresh_checks = self._json("api", "--paginate", "--slurp", f"repos/{self.repo}/commits/{pull.head_sha}/check-runs?per_page=100")
+        if fresh_checks != data:
+            return "failure"  # A rerun or changed check needs a new evaluation, even on the same commit.
         current = self.pull(pull.number)
         return "success" if current.head_sha == pull.head_sha and current.branch == pull.branch else "failure"
 

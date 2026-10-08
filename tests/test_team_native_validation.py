@@ -491,3 +491,17 @@ def test_a_late_unknown_formal_review_never_becomes_success(tmp_path):
         return result
     project.runner = late_unknown
     assert project.checks_with_review(pull, native_review=proof) == "failure"
+
+
+def test_changed_ci_on_the_same_head_during_source_fetch_requires_new_validation(tmp_path):
+    for status, conclusion in (("completed", "failure"), ("in_progress", None)):
+        project, pull, proof, _payloads, runs, _seen = _diwan(tmp_path)
+        assert project.checks_with_review(pull, native_review=proof) == "success"
+        runner = project.runner
+        def changed_checks(argv, **kwargs):
+            result = runner(argv, **kwargs)
+            if argv[0] != "gh":
+                runs[0].update(status=status, conclusion=conclusion)
+            return result
+        project.runner = changed_checks
+        assert project.checks_with_review(pull, native_review=proof) == "failure"
