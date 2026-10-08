@@ -167,9 +167,36 @@ def launch_decision(issue: dict, events: list[dict], owner: str = OWNER) -> list
 
 def payload_event(payload: dict) -> list[dict]:
     """حدثُ الوسم الذي أطلق هذا التشغيل من الحمولة نفسِها، فلا يفوت لتأخّر واجهة الأحداث عنه."""
-    if payload.get("action") in ("labeled", "unlabeled") and payload.get("label"):
-        return [{"event": payload["action"], "label": payload["label"], "actor": payload.get("sender") or {}}]
-    return []
+    label = payload.get("label")
+    if payload.get("action") not in ("labeled", "unlabeled") or not label:
+        return []
+    return [{"event": payload["action"], "label": label, "actor": payload.get("sender") or {}}]
+
+
+def merge_payload_event(events: list[dict], payload: dict, owner: str = OWNER) -> tuple[list[dict], bool]:
+    """يعيد (خطَّ الأحداث، هل لقطةُ الحمولة قديمة).
+
+    القاعدةُ الوحيدةُ التي لا تخمّن: طوابعُ GitHub بدقّة الثانية، فحدثٌ على الوسم نفسِه طابعُه **بعد** ثانيةِ الحمولة
+    (`created_at` > `issue.updated_at`) أحدثُ منها قطعًا؛ عندها اللقطةُ قديمة، فلا يُلحق حدثُها وتُقرأ المسألةُ من المصدر.
+    وفي الثانية نفسِها لا هويّةَ للحدث، فالاتجاهُ الآمن غيرُ متناظر: يُلحق كلُّ ما لا يمنح إذنًا (نزعٌ، أو وسمٌ وضعه غيرُ المالك
+    فينقض إذنَ المالك)، ولا يُلحق **إذنُ المالك** وحده (إذنٌ قديم لا يُعاد اعتمادُه فوق نزعٍ أو إذنِ غيرِ المالك في الثانية نفسِها)
+    وتُقرأ المسألةُ من المصدر.
+    وبلا طوابع أو بخطٍّ متأخّر يُلحق حدثُ الحمولة كما هو. لا مطابقةَ لهويّة الحدث داخل الثانية ولا استدلالَ من لقطة الوسوم:
+    كلاهما خمّن فأخطأ في اتجاهٍ مفتوح (ملاحظاتُ Codex على #346؛ فُرزت في #345)."""
+    extra = payload_event(payload)
+    if not extra:
+        return events, False
+    name = _fold((extra[0].get("label") or {}).get("name"))
+    stamp = str((payload.get("issue") or {}).get("updated_at") or "")
+    same_label = [e for e in events if e.get("event") in ("labeled", "unlabeled") and _fold((e.get("label") or {}).get("name")) == name]
+    newer = [e for e in same_label if str(e.get("created_at") or "") > stamp]
+    if stamp and newer:
+        return events, True
+    same_second = [e for e in same_label if str(e.get("created_at") or "") == stamp]
+    grants = extra[0]["event"] == "labeled" and str((extra[0].get("actor") or {}).get("login") or "") == owner
+    if stamp and same_second and grants:
+        return events, True                     # إذنُ المالك القديم في ثانيةٍ مزدحمة لا يُعاد اعتمادُه (ملاحظتا Codex ٨ و١٠ على #346)
+    return events + extra, False
 
 
 class GitHub:
@@ -186,6 +213,10 @@ class GitHub:
         with urllib.request.urlopen(request, timeout=30) as response:
             raw = response.read()
         return json.loads(raw) if raw else None
+
+    def issue(self, number: int) -> dict:
+        """المسألةُ الحاليةُ من المصدر (عنوانٌ ونصٌّ ووسوم) حين تكون لقطةُ الحمولة قديمة."""
+        return self._call("GET", f"{self.base}/{number}") or {}
 
     def events(self, number: int) -> list[dict]:
         found: list[dict] = []
@@ -212,7 +243,13 @@ def apply_launch_gate(payload: dict, client, owner: str = OWNER) -> int:
         print(json.dumps({"status": "passed", "blocked": []}))
         return 0
     number = int(issue["number"])
-    blocked = launch_decision(issue, client.events(number) + payload_event(payload), owner)
+    events, stale = merge_payload_event(client.events(number), payload)
+    if stale:
+        # لقطةٌ قديمة: المسألةُ (نصًّا ووسومًا) من المصدر، **ثم** خطُّ الأحداث من جديد بعدها، فلا تُحكم وسومٌ حديثة بسجلٍّ قُرئ
+        # قبلها (إذنٌ أعاده غيرُ المالك بين القراءتين؛ ملاحظة Codex السادسة على #346). ما سبق خطَّ الأحداث من تغيّرٍ يظهر فيه.
+        issue = client.issue(number)
+        events = client.events(number)
+    blocked = launch_decision(issue, events, owner)
     for item in blocked:
         client.remove_label(number, item["label"])
     if blocked:

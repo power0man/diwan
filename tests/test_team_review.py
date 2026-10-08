@@ -38,7 +38,7 @@ def _setup(tmp_path, *, issue=41, families=("anthropic",), codex_rc=0, claude_rc
     clock = lambda: "2026-10-06T10:00:00+00:00"  # noqa: E731
     ledger = TeamLedger(home / "dispatch.jsonl", clock=clock)
     for name in calibrated:
-        rv.record_calibration(home, name, caught=7, of=8, false_alarms=0, clock=clock)
+        rv.record_calibration(home, name, caught=7, of=8, false_alarms=0, model="fixture-model", clock=clock)
     reviewer = rv.Reviewer(project=project, adapters=adapters, ledger=ledger, repo_root=repo, home=home, clock=clock,
                            doctor_check=lambda names: {"status": "passed", "findings": []})
     return reviewer, project, adapters, ledger
@@ -108,10 +108,103 @@ def test_a_pull_the_team_did_not_dispatch_is_an_external_review(tmp_path):
 
 
 def test_calibration_expires_after_thirty_days():
-    calibration = {"codex": {"calibrated_at": "2026-09-01T00:00:00+00:00", "defects_planted": 8}}
-    assert rv.is_calibrated(calibration, "codex", "2026-09-20T00:00:00+00:00")
-    assert not rv.is_calibrated(calibration, "codex", "2026-10-06T00:00:00+00:00")
-    assert not rv.is_calibrated({}, "codex", "2026-10-06T00:00:00+00:00")
+    calibration = {"codex": {"calibrated_at": "2026-09-01T00:00:00+00:00", "defects_planted": 8,
+                             "defects_caught": 7, "false_alarms": 0, "model": "fixture-model"}}
+    assert rv.is_calibrated(calibration, "codex", "2026-09-20T00:00:00+00:00", model="fixture-model")
+    assert not rv.is_calibrated(calibration, "codex", "2026-10-06T00:00:00+00:00", model="fixture-model")
+    assert not rv.is_calibrated({}, "codex", "2026-10-06T00:00:00+00:00", model="fixture-model")
+
+
+def test_zero_detection_calibration_does_not_verify_a_passing_review(tmp_path):
+    reviewer, project, adapters, ledger = _setup(tmp_path)
+    head = project.pulls[9].head_sha
+    _dispatched(ledger, head)
+    rv.record_calibration(reviewer.home, "codex", caught=0, of=8, false_alarms=4, model="fixture-model", clock=reviewer.clock)
+    state = reviewer._record(project.pulls[9], adapters["codex"], head, "fixture-review", "pass")
+    assert state == "review_uncalibrated"
+    assert ledger.main_state(41)["state"] == "validated"
+
+
+def test_calibration_rejects_future_naive_and_malformed_dates():
+    entry = {"defects_planted": 8, "defects_caught": 7, "false_alarms": 0, "model": "fixture-model"}
+    now = "2026-10-06T10:00:00+00:00"
+    for stamp in ("2099-01-01T00:00:00+00:00", "2026-10-06T10:00:00", "bad-date", 42, None):
+        assert not rv.is_calibrated({"codex": entry | {"calibrated_at": stamp}}, "codex", now, model="fixture-model")
+    assert not rv.is_calibrated({"codex": entry | {"calibrated_at": now}}, "codex", "2026-10-06T10:00:00", model="fixture-model")
+    assert not rv.is_calibrated({"codex": entry | {"calibrated_at": "2026-10-06T10:00:00"}},
+                                "codex", "2026-10-06T10:00:00", model="fixture-model")
+
+
+def test_inconsistent_calibration_counts_are_not_recorded_or_accepted(tmp_path):
+    now = "2026-10-06T10:00:00+00:00"
+    for caught, planted, alarms in ((9, 8, 0), (-1, 8, 0), (1, 0, 0), (1, 8, -1),
+                                    (True, 8, 0), (1.5, 8, 0)):
+        home = tmp_path / "unchanged"
+        with pytest.raises(ValueError, match="invalid_calibration_counts"):
+            rv.record_calibration(home, "codex", caught=caught, of=planted, false_alarms=alarms, model="fixture-model")
+        assert not home.exists()
+        entry = {"calibrated_at": now, "defects_caught": caught, "defects_planted": planted, "false_alarms": alarms, "model": "fixture-model"}
+        assert not rv.is_calibrated({"codex": entry}, "codex", now, model="fixture-model")
+    for entry in ("bad", {}, {"calibrated_at": now, "defects_planted": 8}):
+        assert not rv.is_calibrated({"codex": entry}, "codex", now, model="fixture-model")
+
+
+def test_invalid_calibration_cli_returns_named_refusal_without_writing(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(rv, "team_home", lambda: tmp_path)
+    args = ["--calibrate", "codex", "--caught", "9", "--of", "8"]
+    assert rv.main(args) == 2
+    assert json.loads(capsys.readouterr().out) == {"status": "refused", "code": "invalid_calibration_counts"}
+    assert not (tmp_path / rv.CALIBRATION_FILE).exists()
+
+
+def test_nonobject_calibration_file_is_unavailable(tmp_path):
+    (tmp_path / rv.CALIBRATION_FILE).write_text('["invalid"]')
+    assert rv.load_calibration(tmp_path) == {}
+
+
+def test_calibration_belongs_to_the_explicit_reviewer_model(tmp_path):
+    reviewer, project, adapters, ledger = _setup(tmp_path)
+    head = project.pulls[9].head_sha
+    _dispatched(ledger, head)
+    saved = rv.load_calibration(reviewer.home)
+    assert saved["codex"]["model"] == "fixture-model"
+    assert rv.is_calibrated(saved, "codex", reviewer.clock(), model="fixture-model")
+    for model in ("different-model", ""):
+        adapters["codex"].model = model
+        assert reviewer._record(project.pulls[9], adapters["codex"], head, "fixture", "pass") == "review_uncalibrated"
+    legacy = {"codex": {k: v for k, v in saved["codex"].items() if k != "model"}}
+    assert not rv.is_calibrated(legacy, "codex", reviewer.clock(), model="fixture-model")
+    unused = tmp_path / "unused"
+    with pytest.raises(ValueError, match="calibration_model_missing"):
+        rv.record_calibration(unused, "codex", caught=1, of=2, false_alarms=0)
+    assert not unused.exists()
+
+
+def test_calibration_cli_records_the_selected_model(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(rv, "team_home", lambda: tmp_path)
+    monkeypatch.setenv("DIWAN_TEAM_CODEX_MODEL", "gpt-6.1-sol")
+    assert rv.main(["--calibrate", "codex", "--caught", "1", "--of", "2"]) == 0
+    assert json.loads(capsys.readouterr().out)["model"] == "gpt-6.1-sol"
+
+
+def test_counted_review_uses_only_the_registered_surface_model_identity(tmp_path):
+    from team.projects.diwan import DiwanProject
+    reviewer, project, adapters, ledger = _setup(tmp_path, families=("openai",), calibrated=())
+    policy = DiwanProject()
+    project.reviewer_identity = policy.reviewer_identity
+    for model in ("", "opus", "unregistered-model"):
+        adapters["claude"].model = model
+        with pytest.raises(rv.Refusal, match="reviewer_identity_not_registered"):
+            reviewer.review(9, execute=True, reviewer="claude")
+        assert reviewer.review(9)["candidates"] == []
+        assert not adapters["claude"].seen and not project.comments and not ledger.records()
+    assert policy.reviewer_identity("antigravity", "anthropic", "claude-opus-5-5") is None
+    assert policy.reviewer_identity("codex", "openai", "") is None
+    adapters["claude"].model = "claude-opus-5-5"
+    out = reviewer.review(9, execute=True)
+    assert out["status"] == "external_review"
+    assert "(anthropic/claude-opus-5-5)" in project.comments[0][1].splitlines()[0]
+    assert "anthropic/claude-fable-5-1" not in project.comments[0][1]
 
 
 def test_the_reviewer_is_told_the_remote_merge_base_not_the_local_main(tmp_path):
@@ -313,10 +406,3 @@ def test_a_platform_failure_in_the_cli_is_a_named_unavailability_not_a_traceback
     out = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
     assert rc == 3 and out == {"status": "project_unavailable", "code": "gh_failed", "detail": "dial tcp: i/o timeout"}
     assert not (tmp_path / "home" / "dispatch.jsonl").read_text(encoding="utf-8").strip()
-
-
-def test_the_published_reviewer_identity_follows_the_adapter(tmp_path):
-    reviewer, project, adapters, _ledger = _setup(tmp_path, issue=None, families=("openai",), calibrated=("claude",))
-    adapters["claude"].agent_id = "anthropic/claude-opus-5-5"
-    reviewer.review(9, execute=True, reviewer="claude")
-    assert "(anthropic/claude-opus-5-5)" in project.comments[-1][1]

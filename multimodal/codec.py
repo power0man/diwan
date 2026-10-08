@@ -198,6 +198,7 @@ def _jpeg_scan(raw: bytes) -> tuple[dict, int]:
     need(0 < len(raw) <= MAX_MEDIA_BYTES)
     offset = 2
     header = None
+    seen_sos = False
     seen_eoi = False
     while offset < len(raw):
         need(raw[offset] == 0xff)
@@ -226,6 +227,7 @@ def _jpeg_scan(raw: bytes) -> tuple[dict, int]:
             header = (width, height, components)
         elif marker == 0xda:  # SOS
             need(header is not None)
+            seen_sos = True
             scan_offset = offset + length
             while scan_offset < len(raw) - 1:
                 if raw[scan_offset] == 0xff:
@@ -248,7 +250,9 @@ def _jpeg_scan(raw: bytes) -> tuple[dict, int]:
                 break
             continue
         offset += length
-    need(header is not None and seen_eoi)
+    # إطارٌ (SOF) بلا مسحٍ (SOS) قبل EOI ملفٌّ تالف لا صورة، فلا يعبر بأبعاد رأسه إلى محرّك الوسائط
+    # (ملاحظة Codex على #340 و#343، فُرزت في #345)
+    need(header is not None and seen_sos and seen_eoi)
     return {"width": header[0], "height": header[1]}, offset
 
 

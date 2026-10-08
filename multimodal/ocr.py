@@ -53,6 +53,8 @@ OCR_IMAGE_SPEC = ToolSpec(
 
 # Tesseract بإعداداته الافتراضية وبيانات العربية، كما قيس في غ٨ (#92)؛ ومهلتُه مهلةُ مُشغِّل القياس
 TESSERACT_TIMEOUT_S = 120
+# سقفُ إخراج مزوّد الوسائط في نداء OCR؛ وبلوغُه (`stop_reason != "complete"`) نصٌّ مبتور يُرفض باسمه ولا يُحفظ
+OCR_MAX_OUTPUT_TOKENS = 800
 # ما يلزم تثبيتُه حين لا يتاح محرّك: صورةُ الحاوية تحمل Tesseract وpoppler (docs/INSTALL.md)
 OCR_INSTALL_HINT = ("لا محرّكَ OCR متاح: ثبّت tesseract-ocr مع tesseract-ocr-ara (وpoppler-utils لصفحات PDF)، "
                     "أو اضبط DIWAN_MEDIA_MODEL وDIWAN_MEDIA_DIGEST لنموذج رؤيةٍ محلي")
@@ -146,9 +148,20 @@ def _extract_text_via_media_provider(image_dict: dict, provider=None, model: str
         user_text = encode_request(OCR_PROMPT, (image_dict,))
         messages = (Message("system", MEDIA_SYSTEM), Message("user", user_text))
         req = validated(Request(messages, target_provider.model, target_provider.model_version,
-                               800, 30, "local_only", "ocr_turn"))
+                               OCR_MAX_OUTPUT_TOKENS, 30, "local_only", "ocr_turn"))
         response = target_provider.complete(req)
+        # صفحةٌ أطول من السقف تعود `max_output` بنصٍّ مبتور؛ فلا يُعاد صامتًا بل يُرفض باسمه، وفي `auto` يُنتقل إلى
+        # المحرّك التالي (ملاحظة Codex على #340 و#343، فُرزت في #345)
+        if response.stop_reason == "max_output":
+            raise ToolRefused("ocr_output_truncated",
+                              f"بلغ مزوّد الوسائط سقفَ الإخراج ({OCR_MAX_OUTPUT_TOKENS} توكن) قبل تمام النصّ؛ لا يُحفظ نصٌّ مبتور")
+        if response.stop_reason != "complete":
+            # توقّفٌ لسببٍ آخر يسمح به العقد (مهلة، عطب، رفض) يُسمّى بسببه لا بسقف الإخراج (ملاحظة Codex على #346)
+            raise ToolRefused(f"ocr_stop_{response.stop_reason}",
+                              f"توقّف مزوّد الوسائط قبل تمام النصّ بسبب `{response.stop_reason}`؛ لا يُحفظ نصٌّ ناقص")
         return response.content.strip()
+    except ToolRefused:
+        raise
     except ProviderError as exc:
         raise ToolRefused(exc.code, exc.reason) from None
     except Exception:

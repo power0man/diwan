@@ -18,9 +18,11 @@ from collections import Counter
 import hashlib
 import json
 import math
+import os
 from pathlib import Path
 import shutil
 import tempfile
+import time
 
 from agent.actions import ActionStore
 from agent.builtin_tools import DEFAULT_TOOLS
@@ -118,8 +120,130 @@ def run_case(case: dict, provider, arm_config: dict, *, model: str, model_versio
         shutil.rmtree(scratch, ignore_errors=True)
 
 
-def run_arm(cases: list[dict], provider, arm_config: dict, **options) -> list[dict]:
-    return [run_case(case, provider, arm_config, **options) for case in cases]
+# كلُّ صفٍّ يكتبه `RunCache.put` يبدأ بهذه البايتات (`json.dumps({"key": …, "row": …})`)؛ فذيلٌ لا يبدأ بها ليس كتابتَه
+ROW_PREFIX = b'{"key": "'
+
+
+class RunCache:
+    """مخبأُ استئنافٍ لليلة الاستئصال (الخطة ك٤٦ البند ٤): ثلاثُ بذورٍ في ذراعين تطيل التشغيل ثلاثَ مرّات، فيُكتب كلُّ صفٍّ
+    مقيس فور قياسه إلى JSONL، ويُعاد التشغيلُ من حيث انقطع بالمفتاح نفسِه.
+
+    - **المفتاحُ** بصمةُ ما يغيّر الجواب: نسخةُ المُشغِّل، والمحرّكُ وبصمتُه، والذراعُ، والبذرةُ، والحالةُ نصًّا، وخياراتُ التشغيل؛
+      فصفٌّ من محرّكٍ أو بصمةٍ أو ذراعٍ أخرى لا يُعاد استعماله.
+    - **المقيسُ وحده يُخبّأ.** العطبُ (مهلة، نفادُ حصّة، حلقةٌ لم تكتمل) يُعاد عند الاستئناف لا يُنسخ، فلا يتحوّل انقطاعُ ليلةٍ إلى
+      «خطأ» دائمٍ يُخرج الحالةَ من الأزواج.
+    - **الذيلُ المبتور يُسقَط لا يُفشِل** (ملاحظة Codex الثانية على #192): انقطاعُ العملية في منتصف كتابة صفٍّ يترك آخرَ سطرٍ
+      JSON ناقصًا بلا سطرٍ جديد؛ فيُقتطع من الملف ويُعاد قياسُ صفّه، وتبقى الصفوفُ السليمة قبله. أمّا سطرٌ فاسدٌ في الوسط
+      فليس انقطاعًا بل عطبُ ملفٍّ، ويُرفض باسمه (`checkpoint_corrupt`). ولا يُقتطع إلا ذيلٌ يبدأ كما يبدأ صفُّ المُشغِّل، وبايتاتُه
+      تُحفظ بجانب الملف قبل الاقتطاع؛ وJSON كاملٌ بغير شكل الصفّ ملفٌّ آخر يُرفض ولا يُمسّ (ملاحظة Codex على #351).
+    - **المستعادُ يُعدّ عند استعماله** (ملاحظة Codex الثالثة): `reused` عددُ الصفوف التي أُخذت من الملف فعلًا في هذا التشغيل، لا
+      عددُ مفاتيح الملف؛ فصفوفُ بصمةٍ أو حالاتٍ أخرى في الملف لا تُعلَن مستعادة.
+    - **والبصمةُ المرفوضة تُحجَر** (ملاحظة Codex الأولى): الصفوفُ تُكتب قبل إعادة التحقّق من بصمة المحرّك في آخر التشغيل، فإن
+      انحرف الوسمُ أثناء القياس رُفض التقريرُ وبقيت صفوفٌ منسوبةٌ إلى البصمة الأولى؛ فيُنقل الملفُّ كلُّه بـ`quarantine` إلى
+      اسمٍ لا يُستأنف منه، كما تُحجَر تشغيلاتُ `evaluate_capabilities` (`tools/model_digest.py::quarantine_runs_since`).
+    - **ولا مخبأَ عبر رابطٍ رمزيّ** (ملاحظة Codex على #351): الحَجرُ ينقل الملفَّ نفسَه ولا يتبع رابطًا، والتحميلُ والكتابةُ يتبعانه؛
+      فلو قُبل رابطٌ لبقي هدفُه بعد رفض البصمة يُستأنف منه. فيُرفض الرابطُ مسارًا للمخبأ قبل أن يُقرأ (`checkpoint_symlink_refused`).
+    - **وسطرٌ أخيرٌ مكتملٌ بلا سطرٍ جديد يُختم** (ملاحظة Codex على #351): انقطاعٌ بعد إغلاق JSON وقبل `\n` يترك صفًّا سليمًا يلتصق
+      به الصفُّ التالي فيفسد الملف؛ فيُكتب السطرُ الجديد الناقص عند التحميل، ويبقى الصفّ.
+    """
+
+    QUARANTINE_SUFFIX = ".drift-quarantine"
+    PARTIAL_TAIL_SUFFIX = ".partial-tail"
+
+    def __init__(self, path: Path):
+        self.path = Path(path)
+        if self.path.is_symlink():
+            raise AblationError("checkpoint_symlink_refused", self.path.name)
+        self.rows: dict[str, dict] = {}
+        self.reused = 0
+        self.dropped_partial_tail = False
+        self.partial_tail_aside: Path | None = None
+        if self.path.exists():
+            self._load()
+
+    def _load(self) -> None:
+        raw = self.path.read_bytes()
+        offset = 0
+        for number, line in enumerate(raw.splitlines(keepends=True), start=1):
+            text = line.strip()
+            if text:
+                try:
+                    entry = json.loads(text)
+                except ValueError:
+                    # الصفُّ يُكتب بسطرٍ واحد يختم بـ"\n"؛ فآخرُ سطرٍ بلا خاتمةٍ يبدأ كما يبدأ صفُّ المُشغِّل انقطاعُ كتابةٍ يُقتطع،
+                    # وما سواه عطبُ ملفّ لا يُمسّ (ملاحظة Codex على #351)
+                    if offset + len(line) == len(raw) and not line.endswith(b"\n"):
+                        if not line.startswith(ROW_PREFIX):
+                            raise AblationError("checkpoint_corrupt", f"{self.path.name}:{number}") from None
+                        self._set_aside_partial_tail(offset, line)
+                        return
+                    raise AblationError("checkpoint_corrupt", f"{self.path.name}:{number}") from None
+                # وJSON كاملٌ بغير شكل الصفّ ليس كتابةً منقطعة بل ملفٌّ آخر: يُرفض ولا يُقتطع منه شيء (ملاحظة Codex على #351)
+                if not (isinstance(entry, dict) and isinstance(entry.get("key"), str) and isinstance(entry.get("row"), dict)):
+                    raise AblationError("checkpoint_corrupt", f"{self.path.name}:{number}")
+                self.rows[entry["key"]] = entry["row"]
+            offset += len(line)
+        if raw and not raw.endswith(b"\n"):
+            with self.path.open("ab") as handle:
+                handle.write(b"\n")
+
+    def _set_aside_partial_tail(self, offset: int, tail: bytes) -> None:
+        """بايتاتُ الذيل المبتور تُحفظ بجانب الملف قبل اقتطاعها، فلا يُفقد ما يُقتطع ولو لم يكن ما ظُنّ (ملاحظة Codex على #351)."""
+        aside = self.path.with_name(f"{self.path.name}{self.PARTIAL_TAIL_SUFFIX}-{time.time_ns()}")
+        with os.fdopen(os.open(aside, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600), "wb") as handle:
+            handle.write(tail)
+        with self.path.open("r+b") as handle:
+            handle.truncate(offset)
+        self.dropped_partial_tail = True
+        self.partial_tail_aside = aside
+
+    @staticmethod
+    def key(case: dict, arm_config: dict, seed: int, *, model: str, model_version: str, **options) -> str:
+        return _sha({"runner_version": RUNNER_VERSION, "model": model, "model_version": model_version,
+                     "arm": arm_config, "seed": seed, "case": case, "options": options})
+
+    def get(self, key: str) -> dict | None:
+        row = self.rows.get(key)
+        if row is not None:
+            self.reused += 1
+        return row
+
+    @classmethod
+    def quarantine_file(cls, path: Path) -> Path | None:
+        """انقل الملفَّ إلى اسمٍ لا يُستأنف منه بعد رفض بصمة المحرّك، بلا قراءته (فقد يكون مبتورًا)؛ None إن لم يكن ملفًّا."""
+        path = Path(path)
+        if path.is_symlink() or not path.is_file():
+            return None
+        target = path.with_name(f"{path.name}{cls.QUARANTINE_SUFFIX}-{time.time_ns()}")
+        os.replace(path, target)
+        return target
+
+    def quarantine(self) -> Path | None:
+        target = self.quarantine_file(self.path)
+        self.rows = {}
+        return target
+
+    def put(self, key: str, row: dict) -> None:
+        if row.get("status") != "measured":
+            return
+        self.rows[key] = row
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        with self.path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps({"key": key, "row": row}, ensure_ascii=False) + "\n")
+
+
+def run_arm(cases: list[dict], provider, arm_config: dict, *, cache: RunCache | None = None, seed: int | None = None,
+            **options) -> list[dict]:
+    rows = []
+    for case in cases:
+        key = cache.key(case, arm_config, seed, **options) if cache is not None else None
+        row = cache.get(key) if cache is not None else None
+        if row is None:
+            row = run_case(case, provider, arm_config, **options)
+            if cache is not None:
+                cache.put(key, row)
+        rows.append(row)
+    return rows
 
 
 def seed_values(count: int = DEFAULT_SEED_COUNT) -> tuple[int, ...]:
@@ -169,14 +293,15 @@ def aggregate_seed_rows(runs: list[tuple[int, list[dict]]]) -> list[dict]:
     return aggregated
 
 
-def run_seeded_arm(cases: list[dict], provider, arm_config: dict, seeds: tuple[int, ...], **options) -> list[dict]:
-    """يشغّل كل بذرة بمزوّد يثبتها فعلًا، ثم يطبّق تجميع البروتوكول."""
+def run_seeded_arm(cases: list[dict], provider, arm_config: dict, seeds: tuple[int, ...],
+                   cache: RunCache | None = None, **options) -> list[dict]:
+    """يشغّل كل بذرة بمزوّد يثبتها فعلًا، ثم يطبّق تجميع البروتوكول؛ وبمخبأٍ يستأنف من حيث انقطع."""
     runs = []
     for seed in seeds:
         if not hasattr(provider, "with_seed"):
             raise AblationError("provider_seed_unsupported", getattr(provider, "name", type(provider).__name__))
         seeded = provider.with_seed(seed)
-        runs.append((seed, run_arm(cases, seeded, arm_config, **options)))
+        runs.append((seed, run_arm(cases, seeded, arm_config, cache=cache, seed=seed, **options)))
     return aggregate_seed_rows(runs)
 
 

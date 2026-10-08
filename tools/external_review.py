@@ -208,8 +208,10 @@ class OllamaChat:
     """
 
     def __init__(self, base_url: str = "http://127.0.0.1:11434", timeout: int = 900,
-                 api_key: str | None = None):
+                 api_key: str | None = None, max_tokens: int = 4000):
         base = base_url.rstrip("/")
+        # حدُّ المخرج يُرسل `num_predict` فيُفرض على النقل، وهو نفسُه حدُّ الحجز في `evaluation.metered` (ملاحظة Codex على #295)
+        self.max_tokens = max_tokens
         self._headers = {"Content-Type": "application/json"}
         if base_url.startswith(LOCAL_PREFIXES):
             self.cloud = False
@@ -232,7 +234,7 @@ class OllamaChat:
             payload = {"model": model, "stream": False, "format": schema,
                        "messages": [{"role": "system", "content": system},
                                     {"role": "user", "content": user}],
-                       "options": {"temperature": 0, "seed": 0, "num_ctx": 65536}}
+                       "options": {"temperature": 0, "seed": 0, "num_ctx": 65536, "num_predict": self.max_tokens}}
             request = urllib.request.Request(
                 self.url, data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
                 headers=dict(self._headers))
@@ -279,9 +281,38 @@ class OllamaChat:
         return {"token_totals": token_totals(self.provider_usage)}
 
 
-def build_transport(base_url: str, environ=os.environ) -> OllamaChat:
-    """النقلُ من النقطة المطلوبة؛ والمفتاحُ من البيئة وحدها (لا خيارَ له في سطر الأوامر)."""
-    return OllamaChat(base_url, api_key=environ.get(CLOUD_KEY_ENV) or None)
+def build_transport(base_url: str, environ=os.environ, *, ledger_path: Path | None = None):
+    """النقلُ من النقطة المطلوبة؛ والمفتاحُ من البيئة وحدها (لا خيارَ له في سطر الأوامر).
+
+    ونداءُ النموذج السحابيّ يمرّ بـ`core.run` بمزوّدٍ غير محليّ مسعَّرٍ من `registry/prices.json` وسجلٍّ مبصوم في `ledger_path`
+    (البند ٣ من #295): كلُّ نداءٍ على ollama.com، ونداءُ `:cloud` على الخادم المحليّ الذي يمرّره إلى الحساب نفسِه، وهو الطريقُ
+    الافتراضيّ للمراجِعين السحابيين (ملاحظة Codex على #352). وما يجيبه الخادمُ المحليّ بنفسه لا يُحجز له ولا يُقيَّد."""
+    transport = OllamaChat(base_url, api_key=environ.get(CLOUD_KEY_ENV) or None)
+    if ledger_path is None:
+        return transport
+    return metered_transport(transport, "ollama", ledger_path, cap_micros=0,
+                             meters=None if transport.cloud else is_cloud_model)
+
+
+def metered_transport(transport, provider_key: str, ledger_path: Path, *, cap_micros: int, **kw):
+    """غلافُ `core.run` لنقلٍ سحابيّ: سقفُ الحجز `cap_micros` (صفرٌ للاشتراك الثابت الذي تقديرُه صفر)، والقيدُ في `ledger_path`."""
+    from core.ledger import Ledger
+    from evaluation.metered import MeteredTransport
+    budget = Budget(day_remaining_micros=cap_micros, month_remaining_micros=cap_micros)
+    return MeteredTransport(transport, provider_key=provider_key, budget=budget, ledger=Ledger(ledger_path), **kw)
+
+
+def _ledger_path(args) -> Path:
+    """سجلُّ `core.run` بجانب `reviews/` لا فيه: `check_artifact` يقرأ كلَّ ملفٍّ هناك وثيقةَ JSON واحدة، والسجلُّ أسطرٌ ومعه مرساتُه
+    (ملاحظة Codex على #352). وسجلُّ الدخان بجانب تقريره (`out.json` ← `out.core-run-ledger.jsonl`)، يُلحَق بما قبله، لا في مجلّدٍ
+    مؤقّت يزول ويبقى اسمُه في الدليل المنشور (ملاحظة Codex على #352)."""
+    smoke_out = getattr(args, "smoke", None)
+    if smoke_out:
+        return Path(smoke_out).with_name(Path(smoke_out).stem + ".core-run-ledger.jsonl")
+    bank = getattr(args, "bank", None)
+    if bank is not None:
+        return Path(bank) / "core-run-ledger.jsonl"
+    return Path(tempfile.mkdtemp(prefix="diwan-core-run-")) / "ledger.jsonl"
 
 
 # ————— الواجهاتُ المجانية المتوافقة مع OpenAI (#168، وموافقة Groq/OpenRouter الموثقة في #197) —————
@@ -369,6 +400,14 @@ ZERO_SPEND_LIMITS = (
     "zero_spend_guard_is_provider_specific_and_not_a_general_price_attestation",
     "provider_usage_is_reported_when_available_and_missing_cost_is_never_assumed_zero",
 )
+# سقفُ السعر داخل طلب OpenRouter نفسِه (#285): `provider.max_price` بوحدات OpenRouter (دولار لكل مليون رمزٍ للمدخل والمخرج،
+# ودولار لكل طلبٍ وصورة)، وكلُّه صفر، فيُلزَم المزوّدَ بألّا يوجّه إلى نقطةٍ مدفوعة إن تغيّر السعرُ بعد لقطة الفهرس.
+# ليس بديلًا عن فحص `usage.cost` بعد النداء: لم يُجرَّب حيًّا، فالفحصُ اللاحق يبقى الحارسَ المُلزم (الحدُّ أدناه).
+OPENROUTER_MAX_PRICE = {"prompt": 0, "completion": 0, "request": 0, "image": 0}
+OPENROUTER_LIMITS = ZERO_SPEND_LIMITS + (
+    "the_openrouter_request_price_cap_max_price_zero_was_not_exercised_live_a_price_that_rises_between_the_catalog"
+    "_snapshot_and_the_call_is_still_detected_only_after_the_call_from_usage_cost",
+)
 # سقفُ الموجّه المدفوع حدٌّ على الحجز بسعر الفهرس، لا ضمانٌ لما يفوتره المزوّد (ملاحظة Codex على #308)
 HF_ROUTER_LIMITS = (
     "the_cap_bounds_reservations_at_the_catalog_price_read_at_run_time_a_charge_reported_above_its_reservation"
@@ -378,7 +417,8 @@ HF_ROUTER_LIMITS = (
 
 def free_limits(base, backend: str | None = None) -> list[str]:
     """حدودُ القياس على الواجهات المجانية من موضعٍ واحد، للتجربة وللبنك وللخلاصة المحفوظة (ملاحظة Codex على #174)."""
-    extra = ZERO_SPEND_LIMITS if backend in {"groq", "openrouter"} else HF_ROUTER_LIMITS if backend == "hf-router" else ()
+    extra = (OPENROUTER_LIMITS if backend == "openrouter" else ZERO_SPEND_LIMITS if backend == "groq"
+             else HF_ROUTER_LIMITS if backend == "hf-router" else ())
     return sorted(set(base) | set(FREE_LIMITS) | set(extra))
 
 
@@ -629,7 +669,7 @@ class OpenAICompatChat:
             # البنودُ بأسمائها الآمنة وقيمِها العشرية المطبَّعة وحدها، لا نصٌّ حرٌّ من الفهرس
             self.zero_spend_evidence[model] = {
                 "proof": self.zero_spend_proofs[model], "catalog": bare_url(self.catalog_url),
-                "observed_at": observed_at,
+                "observed_at": observed_at, "request_price_cap": dict(OPENROUTER_MAX_PRICE),
                 "pricing": {key: str(_decimal(value)) for key, value in sorted(by_id[model]["pricing"].items())
                             if isinstance(key, str) and _SAFE_TOKEN.fullmatch(key)}}
 
@@ -732,8 +772,10 @@ class OpenAICompatChat:
             payload = {"model": self._wire_model(model), "stream": False, "temperature": 0, "max_tokens": self.max_tokens,
                        "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]}
             if self.backend == "openrouter":
-                # لا نماذجَ بديلة ولا انتقالَ مدفوعًا، واطلب الكلفة الفعلية في الردّ حتى لا تُخمَّن صفرًا.
-                payload.update(provider={"allow_fallbacks": False}, usage={"include": True})
+                # لا نماذجَ بديلة ولا انتقالَ مدفوعًا، وسقفُ السعر صفرٌ في الطلب نفسِه (#285)، واطلب الكلفة الفعلية في
+                # الردّ حتى لا تُخمَّن صفرًا.
+                payload.update(provider={"allow_fallbacks": False, "max_price": dict(OPENROUTER_MAX_PRICE)},
+                               usage={"include": True})
             raw, content_type, status = self._send(self.chat_url, payload, model)
             body, shape = response_shape(status, raw, content_type)
             if shape["top"] == "not_json":
@@ -990,12 +1032,14 @@ class PricedRouterChat(OpenAICompatChat):
 
 
 def build_free_transport(backend: str, environ=os.environ, *, spend_cap_usd: Decimal | None = None,
-                         **kw) -> OpenAICompatChat:
+                         ledger_path: Path | None = None, **kw):
     """النقلُ المجانيّ؛ والمفتاحُ من البيئة وحدها (لا خيارَ له في سطر الأوامر). وموجّهُ HF مدفوعٌ فنقلُه مسعَّرٌ بسقف."""
     if backend not in BACKENDS:
         raise AutomaticReviewError("backend_unknown", backend)
     spec = BACKENDS[backend]
     if backend == "hf-router":
+        # موجّهُ HF يحجز ويسوّي بـ`core.budget.Budget` بنفسه (#308)؛ وغلافُ `core.run` فوقه حجزٌ ثانٍ على السقف نفسِه يضيّقه
+        # إلى نصفه، فلا يُغلَّف هنا، و`ledger_path` له حدٌّ معلَن في `evaluation/metered.py`
         return PricedRouterChat(environ.get(spec["key_env"]) or None, spend_cap_usd=spend_cap_usd, **kw)
     if spend_cap_usd is not None:
         raise AutomaticReviewError("max_usd_is_hf_router_only", backend)
@@ -1519,6 +1563,24 @@ def _spend_report(transport) -> dict:
     return report() if callable(report) else {}
 
 
+def _core_run(transport) -> dict:
+    """تقريرُ `core.run` لهذا التشغيل (النداءات، والرفض، وما سُوّي، ومسارُ السجلّ) من نقلٍ مغلَّف؛ يُكتب في خلاصة البنك وما يُطبع
+    كما يُكتب في دليل الدخان، فصفوفُ Ollama تُبقي `cost_usd` فارغًا ولا يبقى غيرُه دليلًا على الإنفاق (ملاحظة Codex على #352)."""
+    core_run = _spend_report(transport).get("core_run") if transport is not None else None
+    return {"core_run": core_run} if core_run else {}
+
+
+def _bank_core_run(ledger_path: Path, transport) -> dict:
+    """تقريرُ `core.run` في خلاصة البنك تراكميٌّ من السجلّ المبصوم نفسِه (`ledger_report`)، ومعه تقريرُ هذا التشغيل في `last_run`:
+    فإعادةٌ تتخطّى ما رُوجع، أو تشغيلٌ سقط قبل كتابة الخلاصة، لا يُسقط نداءً قيّده السجلّ (ملاحظتا Codex على #352)."""
+    from core.ledger import Ledger
+    from evaluation.metered import ledger_report
+    now = _core_run(transport).get("core_run")
+    if not ledger_path.is_file():
+        return {"core_run": now} if now else {}
+    return {"core_run": {**ledger_report(Ledger(ledger_path, create=False)), **({"last_run": now} if now else {})}}
+
+
 def _persist_provider_usage(bank: Path, usage: list[dict], spend: dict | None = None) -> None:
     """سجلُّ النداءات في خلاصة التشغيل نفسها؛ لا يُكتب صفرٌ لكلفة لم يبلغها المزوّد. ومعه دليلُ المجانية (#285)."""
     path = bank / "reviews" / "SUMMARY.json"
@@ -1612,7 +1674,8 @@ def _free_main(args, parser) -> int:
         if args.run_id and args.bank is not None and not (args.smoke or args.list_catalog):
             check_public_bank(args.bank)
             run = args.bank = prepare_run(args.bank, args.run_id)
-        transport = build_free_transport(args.backend, max_tokens=args.max_tokens, spend_cap_usd=args.max_usd)
+        transport = build_free_transport(args.backend, max_tokens=args.max_tokens, spend_cap_usd=args.max_usd,
+                                         ledger_path=_ledger_path(args))
         if args.list_catalog:
             assessed = assess_catalog(transport.catalog(), args.backend)
             # حدودُ الجرد من الموضع الواحد (ملاحظة Codex على #174): الهويةُ معرّفُ الفهرس، والعائلةُ مستنتجة، والفهرسُ لحظةٌ واحدة
@@ -1718,7 +1781,7 @@ def main(argv: list[str] | None = None) -> int:
     transport = None
     if args.smoke:
         try:
-            transport = build_transport(base_url)
+            transport = build_transport(base_url, ledger_path=_ledger_path(args))
             with tempfile.TemporaryDirectory() as tmp:
                 report = smoke(Path(tmp), reviewers, transport, brief_path=args.brief)
         except AutomaticReviewError as exc:
@@ -1738,8 +1801,9 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("مجلّد البنك مطلوب، أو --smoke")
     # ودليلُ مجانيةٍ حفظته الواجهاتُ المجانية على البنك نفسِه يبقى مع نداءاته في السجلّ والخلاصة (ملاحظة Codex على #298)
     prior, prior_evidence = prior_provider_usage(args.bank), prior_zero_spend_evidence(args.bank)
+    ledger_path = _ledger_path(args)
     try:
-        transport = build_transport(base_url)
+        transport = build_transport(base_url, ledger_path=ledger_path)
         try:
             counts = review_bank(args.bank, reviewers, transport, brief_path=args.brief)
         finally:
@@ -1752,14 +1816,15 @@ def main(argv: list[str] | None = None) -> int:
     except AutomaticReviewError as exc:
         usage = getattr(transport, "provider_usage", None) or []
         print(json.dumps({"status": "refused", "code": exc.code, "detail": str(exc),
-                          **({"provider_usage": usage} if usage else {})}, ensure_ascii=False))
+                          **({"provider_usage": usage} if usage else {}), **_core_run(transport)}, ensure_ascii=False))
         return 2
     # السجلُّ يُلحَق بما كتبته التشغيلاتُ السابقة ولا يستبدله، والمجموعُ من السجلّ كلِّه (ملاحظة Codex على #298). وعدُّ نداءات
     # OpenRouter التي لم تثبت كلفتُها من السجلّ كلِّه كذلك، فلا تُسقط خلاصةُ Ollama عددًا كتبته الواجهاتُ المجانية (#295)
     ledger = prior + list(getattr(transport, "provider_usage", []))
     _persist_provider_usage(args.bank, ledger, {"token_totals": token_totals(ledger),
                                                 "cost_unconfirmed_attempts": cost_unconfirmed_attempts(ledger),
-                                                **({"zero_spend_evidence": prior_evidence} if prior_evidence else {})})
+                                                **({"zero_spend_evidence": prior_evidence} if prior_evidence else {}),
+                                                **_bank_core_run(ledger_path, transport)})
     print(json.dumps({
         "status": "failed" if counts["failed"] else "reviewed",
         **counts,
@@ -1767,6 +1832,7 @@ def main(argv: list[str] | None = None) -> int:
         "errors": len(summary["errors"]),
         "owner_queue": len(summary["owner_queue"]),
         "summary": str(args.bank / "reviews" / "SUMMARY.json"),
+        **_core_run(transport),
     }, ensure_ascii=False, indent=2))
     return 1 if counts["failed"] else 0
 

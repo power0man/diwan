@@ -31,7 +31,7 @@ EXCEPTION_LABELS = frozenset({"security", "privacy", "measurement", "allowed-und
 # ق٧٥: من يُحتسب مراجعًا لعائلة الطلب (أسماءُ محوِّلات لا بائعين؛ المالكُ احتياطُ الجميع خارج هذا الجدول)
 REVIEWERS_Q75: dict[str, tuple[str, ...]] = {"anthropic": ("codex",), "openai": ("claude",), "google": ("claude", "codex")}
 ADAPTER_FAMILY: dict[str, str] = {"claude": "anthropic", "codex": "openai"}
-NEVER_REVIEWS: tuple[str, ...] = ("gemini",)
+NEVER_REVIEWS: tuple[str, ...] = ("gemini", "opencode", "antigravity")  # توسعة العامل لا تمنحه حكمًا محتسبًا بق٧٥
 ISSUE_REF = re.compile(r"(?:Closes|Refs|Fixes|Resolves)\s+#(\d+)", re.IGNORECASE)
 BRANCH_ISSUE = re.compile(r"^team/(\d+)-")
 # الفحصُ المطلوب لاعتماد الرأس (حماية main)؛ نجاحُ فحصٍ غير متعلق أو تخطّي الكلّ لا يكفي (ملاحظة Codex على #344)
@@ -138,11 +138,37 @@ class DiwanProject(ProjectAdapter):
                 return family
         return None
 
-    def brief_header(self, issue: Issue, worker_family: str) -> str:
-        ids = sorted(agent for agent in self.registry.get("agents", {}) if agent.startswith(f"{worker_family}/"))
+    def worker_identity(self, worker_name: str, worker_model: str) -> tuple[str, str]:
+        """Exact admitted surface/model, never another agent from the same family."""
+        if worker_name == "codex":
+            return "openai/codex", "ChatGPT Codex"
+        if worker_name == "claude" and worker_model:
+            return f"anthropic/{worker_model}", "Claude Code"
+        if worker_name == "antigravity" and worker_model.startswith("gemini-"):
+            return "google/gemini-antigravity", "Antigravity"
+        if worker_name == "opencode" and worker_model == "ollama/gpt-oss:20b":
+            return "openai/gpt-oss-20b", "OpenCode"
+        return "", ""
+
+    def worker_findings(self, worker_family: str, *, worker_name: str = "", worker_model: str = "") -> list[str]:
+        identity, surface = self.worker_identity(worker_name, worker_model)
+        entry = self.registry.get("agents", {}).get(identity)
+        if (not identity or identity.split("/", 1)[0] != worker_family or not isinstance(entry, dict)
+                or entry.get("surface") != surface):
+            return ["worker_identity_not_registered"]
+        # §2 admits OpenCode for bounded local automation, not arbitrary coding issues.
+        if worker_name == "opencode":
+            return ["worker_role_not_allowed"]
+        return []
+
+    def brief_header(self, issue: Issue, worker_family: str, *, worker_name: str = "", worker_model: str = "") -> str:
+        findings = self.worker_findings(worker_family, worker_name=worker_name, worker_model=worker_model)
+        if findings:
+            raise ProjectError(findings[0], worker_name)
+        identity, _ = self.worker_identity(worker_name, worker_model)
         trailer = self.registry.get("trailer", "Diwan-Agent")
         return "\n".join([
-            f"- كلُّ إيداعٍ يحمل الذيل `{trailer}: <معرّفك>` بمعرّفٍ مسجَّل من عائلة {worker_family}: {', '.join(ids) or '—'}.",
+            f"- هويتُك المسجَّلة لهذه الأداة والنموذج وحدها: `{trailer}: {identity}`؛ لا تستخدم معرّف وكيلٍ آخر من عائلتك.",
             "- إن مسّ تعديلُك مسارًا تملكه عائلةٌ أخرى (`registry/lanes.json`) فاكتب في رسالة الإيداع سطرًا يبدأ بـ«تسليم:».",
             f"- لا تمسّ مسارات النواة المجمَّدة: {', '.join(FROZEN_PATHS)}.",
             "- لا تدمج ولا تدفع إلى `main` ولا تضع وسمًا؛ عملُك ينتهي بإيداعاتٍ على فرعك فقط.",
@@ -151,6 +177,11 @@ class DiwanProject(ProjectAdapter):
         ])
 
     # — طلباتُ الدمج والمراجعة —
+    def reviewer_identity(self, name: str, family: str, model: str) -> str | None:
+        if name not in ("codex", "claude") or not model or self.worker_findings(family, worker_name=name, worker_model=model):
+            return None
+        return self.worker_identity(name, model)[0]
+
     def _pull_from(self, data: dict) -> PullRequest:
         branch = data.get("headRefName") or ""
         merge = data.get("mergeCommit") or {}

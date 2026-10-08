@@ -47,6 +47,13 @@ PENDING_REASONS = frozenset({
     "ollama_show_license_returned_empty_text_on_the_mac",
     "ollama_show_failed_tag_retired_upstream_on_the_mac",
     "ollama_tag_not_pulled_on_the_mac_pull_needs_an_owner_word",
+    # وما تقرؤه `tools/ollama_license_read.py` فيخفق عرضُه بغير تقاعد، أو يُطبع نصُّه فلا يُعرف من بصمة SPDX ولا من عنوانه
+    "ollama_show_failed_on_the_mac",
+    "ollama_show_license_text_read_on_the_mac_but_not_named_from_its_text",
+    # ونصُّ Apache-2.0 مُلئ سطرُ حقوق ملحقه فلا يُقرأ ما فيه: لا يُسمّى بتخمين أنّه اسمُ صاحب الحقّ وحده (المراجعةُ المرفوضة على #350)
+    "ollama_show_license_text_is_apache_2_0_but_its_filled_appendix_copyright_line_is_not_read_naming_it_needs_an_owner_word",
+    # ونصُّ MIT بسطر حقوقٍ قبل جسمه كذلك: قد يحمل بعد اسم صاحبه شرطًا، فلا يُسمّى بتخمين (ملاحظة Codex على #350)
+    "ollama_show_license_text_is_mit_but_its_copyright_notice_lines_are_not_read_naming_it_needs_an_owner_word",
 })
 HTTPS_SOURCE = re.compile(r"^https://[^\s]+$")
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
