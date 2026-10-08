@@ -195,6 +195,9 @@ class TeamLedger:
             completed = self.last_of(issue, "completed", attempt)
             if completed is None or completed.get("head_sha") != evidence["head_sha"]:
                 raise TransitionError("head_mismatch", f"{state} على رأسٍ غير رأس completed")
+        if (state == "verified" and "expected_review" in evidence
+                and evidence["expected_review"] != self._latest_review_record(issue, attempt, evidence["head_sha"])):
+            raise TransitionError("review_changed_before_verification", "ترقية المراجعة القديمة لا تغطي حكمًا أحدث")
         if state == "accepted":
             validated = self.last_of(issue, "validated", attempt)
             verified = self.last_of(issue, "verified", attempt)
@@ -204,11 +207,21 @@ class TeamLedger:
             if self._latest_review_kind(issue, attempt, evidence["head_sha"]) == "review_rejected":
                 # الرفضُ الأحدث على الرأس يطغى على قبولٍ أقدم، ويُفحص هنا تحت القفل لا في المرسِل وحده
                 raise TransitionError("review_rejected_after_verified", "مراجعةٌ رافضة أحدثُ من verified على الرأس نفسِه")
+            if self._latest_review_kind(issue, attempt, evidence["head_sha"]) == "review_uncalibrated":
+                raise TransitionError("review_uncalibrated_after_verified", "مراجعةٌ أحدث بلا معايرة على الرأس نفسه")
+            if ("expected_review" in evidence
+                    and evidence["expected_review"] != self._latest_review_record(issue, attempt, evidence["head_sha"])):
+                raise TransitionError("review_changed_before_acceptance", "دليل المراجعة تغيّر بعد فحصه وقبل الإلحاق")
 
     def _latest_review_kind(self, issue: int, attempt: int, head: str) -> str | None:
+        record = self._latest_review_record(issue, attempt, head)
+        return record["state"] if record else None
+
+    def _latest_review_record(self, issue: int, attempt: int, head: str) -> dict | None:
         for record in reversed(self.records(issue)):
-            if record.get("attempt") == attempt and record.get("head_sha") == head and record["state"] in ("verified", "review_rejected"):
-                return record["state"]
+            if (record.get("attempt") == attempt and record.get("head_sha") == head
+                    and record["state"] in ("verified", "reviewed_awaiting_validation", "review_rejected", "review_uncalibrated")):
+                return record
         return None
 
     def _check_takeover(self, issue: int, evidence: dict) -> None:

@@ -33,7 +33,7 @@ from team import team_home, worktrees_root
 from team.adapters.base import Adapter
 from team.adapters.opencode import ModelUnconfigured
 from team.ledger import LEASE_SECONDS, TeamLedger, TransitionError, lease_expired, now_utc
-from team.projects.base import Issue, ProjectAdapter, ProjectError
+from team.projects.base import Issue, NativeReview, ProjectAdapter, ProjectError, PullRequest
 
 LEDGER_FILE = "dispatch.jsonl"
 HERE = Path(__file__).resolve().parent
@@ -324,14 +324,53 @@ class Dispatcher:
 
     def latest_review(self, issue_number: int, head: str) -> dict | None:
         """آخرُ قيدِ مراجعةٍ على هذا الرأس أيًّا كان نوعه؛ فالرفضُ الأحدث يطغى على قبولٍ أقدم (ملاحظة Codex على #344)."""
+        state = self.ledger.main_state(issue_number) or {}
         for record in reversed(self.ledger.records(issue_number)):
-            if record["state"] in ("reviewed_awaiting_validation", "review_rejected", "verified") and record.get("head_sha") == head:
+            if (record["state"] in ("reviewed_awaiting_validation", "review_rejected", "review_uncalibrated", "verified")
+                    and record.get("attempt") == state.get("attempt") and record.get("head_sha") == head):
                 return record
         return None
 
+    def native_review(self, issue_number: int, pull: PullRequest) -> NativeReview | None:
+        """Read the original evidence, never infer a historical model from today's adapter."""
+        from team.review import is_calibrated
+        self.ledger.ledger.verify_chain(strict=True)
+        state = self.ledger.open_attempt(issue_number)
+        if state is None:
+            return None
+        completed = self.ledger.last_of(issue_number, "completed", state["attempt"]) or {}
+        dispatched = self.ledger.last_of(issue_number, "dispatched", state["attempt"]) or {}
+        record = self.latest_review(issue_number, pull.head_sha) or {}
+        if (completed.get("pr") != pull.number or pull.issue != issue_number
+                or completed.get("head_sha") != pull.head_sha or pull.branch != dispatched.get("branch")
+                or record.get("attempt") != state["attempt"] or record.get("pr") != pull.number
+                or record.get("state") not in ("reviewed_awaiting_validation", "verified") or record.get("verdict") != "pass"):
+            return None
+        name, family, model = (record.get(key) for key in ("reviewer", "reviewer_family", "reviewer_model"))
+        identity = self.project.reviewer_identity(name, family, model) if all(isinstance(v, str) and v for v in (name, family, model)) else None
+        families = self.project.author_families(pull)
+        policy = self.project.review_policy(families)
+        if (not families or family in families or name not in policy.candidates or name in policy.never
+                or not identity or identity.split("/", 1)[0] != family or record.get("reviewer_identity") != identity
+                or not isinstance(record.get("review_ref"), str) or not record["review_ref"]
+                or not re.fullmatch(r"[0-9a-f]{32}", str(record.get("review_execution_id") or ""))):
+            return None
+        calibration = {name: record.get("reviewer_calibration")}
+        if not (is_calibrated(calibration, name, record.get("at"), model=model)
+                and is_calibrated(calibration, name, self.clock(), model=model)):
+            return None
+        return NativeReview(pull.number, pull.head_sha, name, family, model, identity, record["review_ref"], tuple(sorted(families)))
+
     def validate(self, issue_number: int) -> dict:
+        self.ledger.ledger.verify_chain(strict=True)
         head = self.sync_head(issue_number)
-        status = self.project.checks(head)
+        state = self.ledger.main_state(issue_number)
+        completed = self.ledger.last_of(issue_number, "completed", state["attempt"])
+        pull = self.project.pull(int(completed["pr"]))
+        if pull.head_sha != head:
+            raise Refusal("head_changed_during_validation")
+        native = self.native_review(issue_number, pull)
+        status = self.project.checks_with_review(pull, native_review=native)
         if status == "success":
             state = self.ledger.main_state(issue_number)["state"]
             if state == "completed":
@@ -339,9 +378,11 @@ class Dispatcher:
             # مراجعةٌ ناجحة سبقت الفحوصَ أو تزامنت معها (قُيّدت بعد validated) تُرقّى هنا لا بمراجعةٍ ثانية مدفوعة
             if self.ledger.main_state(issue_number)["state"] == "validated":
                 pending = self.latest_review(issue_number, head)
-                if pending and pending["state"] == "reviewed_awaiting_validation" and pending.get("verdict") == "pass":
+                if native and pending and pending["state"] == "reviewed_awaiting_validation" and pending.get("verdict") == "pass":
                     self.ledger.append(issue_number, "verified", head_sha=head, review_ref=pending["review_ref"],
-                                       reviewer=pending["reviewer"], reviewer_family=pending["reviewer_family"], verdict=pending.get("verdict"))
+                                       reviewer=pending["reviewer"], reviewer_family=pending["reviewer_family"], verdict=pending.get("verdict"),
+                                       expected_review=pending,
+                                       **{key: pending[key] for key in ("pr", "reviewer_model", "reviewer_identity", "reviewer_calibration", "review_execution_id")})
             return {"status": "validated", "head_sha": head}
         if status == "failure":
             state = self.ledger.main_state(issue_number)
@@ -368,7 +409,17 @@ class Dispatcher:
         latest = self.latest_review(issue_number, state["head_sha"])
         if latest is not None and latest["state"] == "review_rejected":
             raise Refusal("review_rejected_after_verified", latest.get("review_ref", ""))
-        self.ledger.append(issue_number, "accepted", head_sha=state["head_sha"], merge_sha=merge)
+        native = self.native_review(issue_number, pull)
+        if native is None:
+            raise Refusal("native_review_unproven")
+        review_snapshot = self.latest_review(issue_number, pull.head_sha)
+        if self.project.checks_with_review(pull, native_review=native) != "success":
+            raise Refusal("checks_not_validated_at_acceptance")
+        if (self.native_review(issue_number, pull) != native
+                or self.latest_review(issue_number, pull.head_sha) != review_snapshot):
+            raise Refusal("native_review_changed_at_acceptance")
+        self.ledger.append(issue_number, "accepted", head_sha=state["head_sha"], merge_sha=merge,
+                           expected_review=review_snapshot)
         return {"status": "accepted", "merge_sha": merge}
 
     def _recover_claim(self, issue_number: int, dispatched: dict) -> dict:

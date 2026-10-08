@@ -37,6 +37,19 @@ class ReviewPolicy:
     never: tuple[str, ...] = ()
 
 
+@dataclass(frozen=True)
+class NativeReview:
+    """Coordinator evidence from a checked current-attempt ledger record, never a CLI override."""
+    pr: int
+    head_sha: str
+    reviewer: str
+    reviewer_family: str
+    reviewer_model: str
+    reviewer_identity: str
+    review_ref: str
+    author_families: tuple[str, ...]
+
+
 class ProjectError(RuntimeError):
     """عطبٌ في الوصول إلى منصّة المشروع (شبكةٌ، مصادقة، حصّة): رفضٌ مسمًّى برمزه يقرؤه سطرُ الأوامر، لا انفجارٌ خام."""
 
@@ -94,6 +107,10 @@ class ProjectAdapter:
     def checks(self, head_sha: str) -> str:
         """حالةُ فحوص الرأس: success | failure | pending | none."""
         raise NotImplementedError("checks")
+
+    def checks_with_review(self, pull: PullRequest, *, native_review: NativeReview | None = None) -> str:
+        """Projects opt in to a bounded review-channel alternative; the default stays fail closed."""
+        return self.checks(pull.head_sha)
 
     def author_families(self, pull: PullRequest) -> set[str]:
         raise NotImplementedError("author_families")
