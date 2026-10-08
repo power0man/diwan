@@ -330,21 +330,41 @@ class Dispatcher:
         receipt, declared = self._host_checks_after(issue_number, attempt)
         if receipt and (declared is None or declared["head_sha"] != head):
             return "host_checks_not_declared"
+        if receipt and self._unclean_paths(wt, issue_number) != []:
+            return "worktree_dirty_after_host_checks"
         if self._git("rev-parse", "HEAD", cwd=wt) != head:
             return "branch_moved_before_push"
         return None
 
     def _host_checks_after(self, issue_number: int, attempt: int) -> tuple[dict | None, dict | None]:
-        """إيصالُ آخر تسليمٍ في المحاولة، وإعلانُ فحوص المضيف المقيَّدُ بعده على رأسه نفسِه إن وُجد. إيداعُ المنسّق لا يُنشر إلا
-        بهذا الإعلان على الرأس الذي يُدفع (ملاحظة Codex الثالثة على #368)."""
+        """إيصالُ آخر تسليمٍ في المحاولة، وآخرُ إعلانٍ لفحوص المضيف قُيّد بعده إن وُجد. إيداعُ المنسّق لا يُنشر إلا بإعلانٍ على
+        الرأس الذي يُدفع نفسِه (ملاحظة Codex الثالثة على #368)."""
         records = self.ledger.records(issue_number)
         for index in range(len(records) - 1, -1, -1):
             receipt = records[index]
             if receipt["state"] == "controller_commit" and receipt.get("attempt") == attempt:
                 declared = [record for record in records[index + 1:] if record["state"] == "host_checks_declared"
-                            and record.get("attempt") == attempt and record.get("head_sha") == receipt["head_sha"]]
+                            and record.get("attempt") == attempt]
                 return receipt, (declared[-1] if declared else None)
         return None, None
+
+    def _unclean_paths(self, wt: Path, issue_number: int) -> list[str] | None:
+        """ما في نسخة العمل خارج الرأس: تعديلٌ متتبَّع أو مُدرَج، أو ملفٌّ غير متتبَّع سوى ملفّ التكليف؛ وNone إن تعذّرت القراءة.
+        فحوصٌ تكتب (`--write`) فغيّرت ملفًّا لم تُجرِ على الرأس المعلَن، فلا يُقبل إعلانُها ولا يُدفع بعدها (ملاحظة Codex الرابعة على #368)."""
+        done = self.runner(["git", "-C", str(wt), "status", "--porcelain=v1", "-z", "--untracked-files=all"],
+                           capture_output=True, text=True)
+        if done.returncode != 0:
+            return None
+        brief = f"docs/team/briefs/{issue_number}.md"
+        paths: list[str] = []
+        for entry in (done.stdout or "").split("\0"):     # -z بلا strip: الفراغُ الأوّل جزءٌ من رمز الحالة
+            if len(entry) < 4:
+                continue
+            code, rel = entry[:2], entry[3:]
+            if code == "??" and rel == brief:
+                continue
+            paths.append(rel)
+        return paths
 
     def sync_head(self, issue_number: int) -> str:
         """رأسُ الطلب الحالي؛ إن تقدّم عن رأس `completed` (تصحيحٌ دُفع) قُيّد `completed` جديد فيسقط ما قبله ويُعاد التحقق والمراجعة."""
@@ -446,19 +466,34 @@ class Dispatcher:
             return {"status": "outcome_unknown", "reason": "controller_commit_incomplete", "attempt": state["attempt"]}
         if state["state"] != "accepted" and self.ledger.open_attempt(issue_number) is None:
             return {"status": "taken_over", "attempt": state["attempt"]}      # محاولةٌ مستحوَذٌ عليها لا تُستأنف
-        # إيداعُ المنسّق ينتظر فحوصَ المضيف (`docs/team/README.md`): المشغّلُ يعلن نجاحها على رأس الإيصال نفسِه، والإعلانُ يُقيَّد
-        # إقرارًا غيرَ مصادَق؛ وبلا إعلانٍ لا دفعَ ولا طلب (ملاحظة Codex الثالثة على #368)
+        # إيداعُ المنسّق ينتظر فحوصَ المضيف (`docs/team/README.md`): المشغّلُ يعلن نجاحها على رأس نسخة العمل الحالي، وهو رأسُ
+        # الإيصال أو إيداعٌ بعده (ما ولّدته فحوصٌ تكتب)، ونسخةُ العمل نظيفة؛ والإعلانُ يُقيَّد إقرارًا غيرَ مصادَق، وبلا إعلانٍ لا دفعَ
+        # ولا طلب (ملاحظتا Codex الثالثة والرابعة على #368)
         receipt, declared = self._host_checks_after(issue_number, state["attempt"])
-        if host_checks_passed is not None and receipt is None:
-            raise Refusal("host_checks_without_controller_commit")
-        if host_checks_passed is not None and host_checks_passed != receipt["head_sha"]:
-            raise Refusal("host_checks_head_mismatch", f"المعلَن {host_checks_passed[:12]} ≠ رأس الإيصال {receipt['head_sha'][:12]}")
-        if receipt and declared is None:
-            if host_checks_passed is None:
-                return {"status": "awaiting_host_checks", "head_sha": receipt["head_sha"], "attempt": state["attempt"]}
-            self.ledger.append(issue_number, "host_checks_declared", attempt=state["attempt"], head_sha=receipt["head_sha"],
+        if host_checks_passed is not None:
+            if receipt is None:
+                raise Refusal("host_checks_without_controller_commit")
+            worktree = Path((self.ledger.last_of(issue_number, "dispatched", state["attempt"]) or {}).get("worktree") or "/nonexistent")
+            try:
+                current = self._git("rev-parse", "HEAD", cwd=worktree)
+            except GitError as exc:
+                raise Refusal("host_checks_worktree_unreadable") from exc
+            if host_checks_passed != current:
+                raise Refusal("host_checks_head_mismatch", f"المعلَن {host_checks_passed[:12]} ≠ رأس نسخة العمل {current[:12]}")
+            try:
+                self._git("merge-base", "--is-ancestor", receipt["head_sha"], current, cwd=worktree)
+            except GitError as exc:
+                raise Refusal("host_checks_head_not_after_handoff", f"رأس الإيصال {receipt['head_sha'][:12]}") from exc
+            unclean = self._unclean_paths(worktree, issue_number)
+            if unclean is None:
+                raise Refusal("host_checks_worktree_unreadable")
+            if unclean:
+                raise Refusal("host_checks_worktree_dirty", ", ".join(sorted(unclean)[:10]))
+            self.ledger.append(issue_number, "host_checks_declared", attempt=state["attempt"], head_sha=current,
                                plan_sha256=receipt["plan_sha256"], controller_agent=receipt["controller_agent"],
-                               declaration_authenticated=False)
+                               receipt_head_sha=receipt["head_sha"], declaration_authenticated=False)
+        elif receipt and declared is None:
+            return {"status": "awaiting_host_checks", "head_sha": receipt["head_sha"], "attempt": state["attempt"]}
         if state["state"] == "dispatched":
             state = self._recover_claim(issue_number, state)
             if "state" not in state:

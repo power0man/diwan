@@ -90,10 +90,13 @@ Git مع مستودع المنسق. السجلات الجديدة تضيف اس�
 
 بعد الإيداع يشغّل المنسق قائمة فحوص المضيف الكاملة في `AGENTS.md` على الرأس المعاد، ويثبت أن الرأس لم يتغير أثناءها،
 ثم ينفذ `resume <issue> --host-checks-passed <head_sha>` منفصلًا. `resume` بلا هذا الإعلان بعد إيصال `controller_commit` يعيد
-`awaiting_host_checks` برأس الإيصال ولا يدفع؛ وإعلانٌ على رأسٍ غيره `host_checks_head_mismatch`، وبلا إيصال
-`host_checks_without_controller_commit`. يُقيَّد الإعلان `host_checks_declared` إقرارًا من المشغّل غير مصادق
-(`declaration_authenticated: false`)، ولا يثبت أن الفحوص جرت. والدفع تحت قفل السجل يشترطه على الرأس الذي يُدفع نفسه؛
-فإيداعٌ لاحق في نسخة العمل يعطي `outcome_unknown:host_checks_not_declared`.
+`awaiting_host_checks` برأس الإيصال ولا يدفع. الرأس المعلَن هو رأس نسخة العمل الحالي، وهو رأس الإيصال أو إيداعٌ بعده: فحصٌ يكتب
+(`--write`) فغيّر ملفًا أو أنشأه يُودَع ما ولّده بإيداعٍ مستقل وتُعاد الفحوص على رأسه، لأن نسخة العمل تُشترط نظيفة (سوى ملف التكليف
+غير المتتبَّع). الرفض المسمّى: `host_checks_head_mismatch` لرأسٍ غير رأس نسخة العمل، و`host_checks_head_not_after_handoff`
+لرأسٍ لا ينحدر من الإيصال، و`host_checks_worktree_dirty` لنسخةٍ غير نظيفة، و`host_checks_without_controller_commit` بلا إيصال.
+يُقيَّد الإعلان `host_checks_declared` إقرارًا من المشغّل غير مصادق (`declaration_authenticated: false`)، ولا يثبت أن الفحوص جرت.
+والدفع تحت قفل السجل يشترط آخر إعلانٍ بعد الإيصال على الرأس الذي يُدفع نفسه، ونسخةً نظيفة: فإيداعٌ لاحق يعطي
+`outcome_unknown:host_checks_not_declared`، وتعديلٌ غير مودَع `outcome_unknown:worktree_dirty_after_host_checks`.
 الإيداع نفسه لا يشغل push أو PR أو validate أو merge، ولا يسجل accepted أو calibration.
 الفحوص المحلية لا تصير قبولًا أو تجربة تسليم مستقلة؛ تُحسب هذه الحالة `controller-assisted` وتدخلها تدخل فعلي.
 
