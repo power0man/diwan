@@ -177,6 +177,22 @@ def test_the_ollama_bank_summary_and_result_carry_the_core_run_spend(tmp_path, m
         assert len(core_run["calls"]) == len(summary["provider_usage"]) and core_run["refusals"] == []
 
 
+def test_an_ollama_rerun_keeps_the_core_run_report_of_the_reviews_it_skips(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex على #352: الإعادةُ على بنكٍ مراجَع تتخطّى سجلّاته فتقريرُ `core.run` لها فارغ، وكان يستبدل في الخلاصة تقريرَ
+    التشغيل الأول فتختفي نداءاتُه ورفضُه مع بقائها في السجلّ. فالخلاصةُ تراكميّة، وما يُطبع لهذا التشغيل وحده."""
+    bank = smoke_bank(tmp_path)
+    _wire(monkeypatch, _Opener(_reply(prompt_eval_count=50, eval_count=10)))
+    assert cli.main([str(bank)]) == 0
+    capsys.readouterr()
+    first = json.loads((bank / "reviews" / "SUMMARY.json").read_text(encoding="utf-8"))["core_run"]
+    assert cli.main([str(bank)]) == 0
+    printed = json.loads(capsys.readouterr().out)["core_run"]
+    again = json.loads((bank / "reviews" / "SUMMARY.json").read_text(encoding="utf-8"))["core_run"]
+    assert first["calls"] and printed["calls"] == [] and printed["refusals"] == []
+    assert (again["calls"], again["refusals"], again["settled_usd"], again["ledger"]) \
+        == (first["calls"], first["refusals"], first["settled_usd"], first["ledger"])
+
+
 def test_a_rerun_on_a_reviewed_bank_keeps_the_earlier_ledger(tmp_path, monkeypatch, capsys):
     """ملاحظة Codex على #298: إعادةُ التشغيل تتخطّى السجلّات فلا ترسل نداءً، ولا تمحو أدلّةَ إنفاق المراجعات القائمة."""
     bank = smoke_bank(tmp_path)

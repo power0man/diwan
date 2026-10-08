@@ -307,3 +307,14 @@ def test_a_ledger_cut_between_runs_is_refused_before_the_next_call(tmp_path):
     with pytest.raises(AutomaticReviewError) as unanchored:
         again("priced", "s", "u", {})
     assert unanchored.value.code == "spend_ledger_corrupt" and transport.calls == 2 and _charged(again) == 0
+
+
+def test_a_malformed_unanchored_ledger_is_a_named_refusal(tmp_path):
+    """ملاحظة Codex على #352: كان عدُّ القيود يقرأ السجلّ قبل التحويل، فسجلٌّ تالفٌ بلا مرساة (انهيارٌ وسط الكتابة) يُخرج
+    `LedgerCorrupt` خامًا لا يلتقطه سطرُ الأوامر، بدل الرفض المسمّى."""
+    transport = FakeTransport({"content": "a", "usage": {"prompt_tokens": 1, "completion_tokens": 1}})
+    metered = _metered(tmp_path, transport)
+    metered.ledger.path.write_text('{"digest": \n', encoding="utf-8")
+    with pytest.raises(AutomaticReviewError) as refused:
+        metered("priced", "s", "u", {})
+    assert refused.value.code == "spend_ledger_corrupt" and transport.calls == 0 and _charged(metered) == 0

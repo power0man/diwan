@@ -181,11 +181,12 @@ class MeteredTransport:
     def _verify_ledger(self) -> None:
         """يُتحقَّق من السجلّ بمرساته قبل أي قيدٍ جديد: كان قيدٌ جديدٌ ومرساتُه بعده يمحوان قصَّ ذيلٍ سابق، فيمرّ التحقّقُ الصارم
         بعدهما ويختفي قيدُ إنفاقٍ محذوف (ملاحظة Codex على #352). وسجلٌّ فيه قيودٌ بلا مرساة يُرفض كذلك؛ والفارغُ بلا مرساةٍ بدايةٌ."""
-        if self.ledger.anchor_path.exists() or self.ledger.count():
-            try:
+        # والعدُّ نفسُه يقرأ السجلّ: سجلٌّ تالفٌ بلا مرساة يُرفض بالاسم نفسِه لا استثناءً خامًا (ملاحظة Codex على #352)
+        try:
+            if self.ledger.anchor_path.exists() or self.ledger.count():
                 self.ledger.verify_chain(strict=True)
-            except LedgerCorrupt as exc:
-                raise AutomaticReviewError("spend_ledger_corrupt", str(exc)) from exc
+        except (LedgerCorrupt, UnicodeDecodeError) as exc:
+            raise AutomaticReviewError("spend_ledger_corrupt", str(exc)) from exc
 
     def _refused(self, model: str, code: str, provider: MeteredProvider, before: int) -> AutomaticReviewError:
         # ما خصمته الميزانيةُ على هذا النداء وإن لم يُحسب نداءً: ردٌّ بلا توكناتٍ يُسوّى بالمحجوز كلِّه، فلا يُعلن التقريرُ صفرًا
