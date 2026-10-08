@@ -60,3 +60,40 @@ def test_a_short_unchecked_or_gameable_bank_is_named(tmp_path):
     assert f"gameable_by_fixed_answer:{first['cases'][1]['case_id']}:empty" in findings
     assert f"overlaps_measurement_bank:{first['cases'][2]['case_id']}" in findings
     assert any(f.startswith("capability_under_minimum:") for f in findings)
+
+
+def _earlier(suites, name, cases):
+    (suites / name).write_text(json.dumps({"cases": cases}, ensure_ascii=False), encoding="utf-8")
+
+
+def test_a_case_repeated_from_an_earlier_suite_by_id_or_first_message_is_named(tmp_path):
+    """بنكا v1 وv2 كبنك القياس: معرّفٌ مشترك وحده، أو رسالةٌ أولى مشتركة وحدها، يُسمّى ويمنع التجميد."""
+    suites = tmp_path / "suites"
+    suites.mkdir()
+    for name in gbf.SUITES:
+        (suites / name).write_bytes((gbf.SUITES_DIR / name).read_bytes())
+    current = json.loads((suites / gbf.SUITES[0]).read_text(encoding="utf-8"))["cases"]
+    by_id, by_text = current[0], current[1]
+    _earlier(suites, gbf.EARLIER_SUITES[0],
+             [{"case_id": by_id["case_id"], "messages": [{"role": "user", "content": "نصٌّ آخر لا يتكرّر"}]}])
+    _earlier(suites, gbf.EARLIER_SUITES[1],
+             [{"case_id": "earlier_only_0001", "messages": [{"role": "user", "content": gbf._first_user(by_text)}]}])
+    result = gbf.profile(suites, measurement_bank=tmp_path / "none")
+    assert result["findings"] == [f"overlaps_earlier_suite:{gbf.EARLIER_SUITES[0]}:{by_id['case_id']}",
+                                  f"overlaps_earlier_suite:{gbf.EARLIER_SUITES[1]}:{by_text['case_id']}"]
+    assert result["independence"][gbf.EARLIER_SUITES[0]] == {"case_id_overlap": 1, "first_message_overlap": 0}
+    assert result["independence"][gbf.EARLIER_SUITES[1]] == {"case_id_overlap": 0, "first_message_overlap": 1}
+
+
+def test_unrelated_or_unreadable_earlier_suites(tmp_path):
+    """الضابط: سابقٌ لا يشارك الحاليَّ شيئًا لا يُسمّى؛ وسابقٌ لا يُقرأ يُسمّى ولا يُسقط الأداة."""
+    suites = tmp_path / "suites"
+    suites.mkdir()
+    for name in gbf.SUITES:
+        (suites / name).write_bytes((gbf.SUITES_DIR / name).read_bytes())
+    _earlier(suites, gbf.EARLIER_SUITES[0],
+             [{"case_id": "earlier_only_0001", "messages": [{"role": "user", "content": "نصٌّ آخر لا يتكرّر"}]}])
+    assert gbf.profile(suites, measurement_bank=tmp_path / "none")["findings"] == []
+    (suites / gbf.EARLIER_SUITES[1]).write_text("{not json", encoding="utf-8")
+    assert gbf.profile(suites, measurement_bank=tmp_path / "none")["findings"] == [
+        f"earlier_suite_unreadable:{gbf.EARLIER_SUITES[1]}"]

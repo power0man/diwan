@@ -93,6 +93,24 @@ RECEIPT="docs/probe/k43-general-150-20261007.json"
 sha() { python3 -c 'import hashlib,sys;print(hashlib.sha256(open(sys.argv[1],"rb").read()).hexdigest())' "$1"; }
 committed() { git -C "$DIWAN" ls-files --error-unmatch -- "$1" >/dev/null 2>&1 &&
   [ -z "$(git -C "$DIWAN" status --porcelain -- "$1")" ]; }
+# الإيصالُ يُقرأ JSON لا نصًّا: إيصالُ تجميد ك٤٣ بنوعه وحالته، وفيه المسارُ العامّ مرّةً واحدة ببصمته هو؛
+# وإيصالٌ تالفٌ أو مكرَّرُ المسار، أو بصمةٌ تحت مسارٍ آخر، لا يُثبت شيئًا.
+frozen_at() { python3 - "$DIWAN/$RECEIPT" "evaluation/suites/$1" "$2" <<'PY'
+import json, sys
+receipt, path, digest = sys.argv[1:]
+try:
+    data = json.load(open(receipt, encoding="utf-8"))
+    files = data["files"]
+    ok = (data["kind"] == "k43_general_bank_freeze" and data["status"] == "frozen_not_measured"
+          and isinstance(files, list) and files and all(isinstance(e, dict) for e in files))
+    paths = [e.get("path") for e in files] if ok else []
+    ok = ok and len(set(paths)) == len(paths)
+    ok = ok and [e.get("path") for e in files if e.get("sha256") == digest] == [path]
+except Exception:
+    ok = False
+sys.exit(0 if ok else 1)
+PY
+}
 FULFILLED=""
 for f in $DEV; do
   dst="$DIWAN/evaluation/suites/$f"
@@ -100,7 +118,7 @@ for f in $DEV; do
   pinned=$(printf '%s\n' "$DELIVERED" | awk -F= -v f="$f" '$1 == f {print $2}')
   if [ -n "$pinned" ] && [ "$(sha "$SRC/$f")" = "$pinned" ] && [ "$(sha "$dst")" = "$pinned" ] &&
      committed "evaluation/suites/$f" && committed "$RECEIPT" &&
-     grep -qF "\"sha256\": \"$pinned\"" "$DIWAN/$RECEIPT"; then
+     frozen_at "$f" "$pinned"; then
     FULFILLED="$FULFILLED $f"
   else
     echo "توقّفت: $dst موجود من قبل، ولم أغيّر شيئًا"; exit 1

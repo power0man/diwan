@@ -122,14 +122,22 @@ def profile(suites_dir: Path = SUITES_DIR, *, measurement_bank: Path = MEASUREME
                "first_message_overlap": sum(_first_user(case) in bank_firsts for case in cases)}
     findings += [f"overlaps_measurement_bank:{case['case_id']}" for case in cases
                  if case["case_id"] in bank_ids or _first_user(case) in bank_firsts]
+    # بنكا v1 وv2 كبنك القياس: المعرّفُ وحده أو الرسالةُ الأولى وحدها تكفي لتسمية الحالة، فلا يُجمَّد بنكٌ يكرّرهما.
     for name in EARLIER_SUITES:
         earlier = suites_dir / name
         if earlier.is_file():
-            data = json.loads(earlier.read_text(encoding="utf-8"))
-            e_ids = {c["case_id"] for c in data.get("cases", [])}
-            e_firsts = {_first_user(c) for c in data.get("cases", [])}
+            try:
+                data = json.loads(earlier.read_text(encoding="utf-8"))
+                earlier_cases = [c for c in data.get("cases", []) if isinstance(c, dict)]
+            except (OSError, ValueError, AttributeError):
+                findings.append(f"earlier_suite_unreadable:{name}")
+                continue
+            e_ids = {str(c.get("case_id")) for c in earlier_cases}
+            e_firsts = {_first_user(c) for c in earlier_cases}
             overlap[name] = {"case_id_overlap": sum(c["case_id"] in e_ids for c in cases),
                              "first_message_overlap": sum(_first_user(c) in e_firsts for c in cases)}
+            findings += [f"overlaps_earlier_suite:{name}:{case['case_id']}" for case in cases
+                         if case["case_id"] in e_ids or _first_user(case) in e_firsts]
     regulation = sum(any(word in json.dumps(case["messages"], ensure_ascii=False)
                          for word in ("نظام", "لائحة", "المادة", "تشريع", "قانون")) for case in cases)
     return {
