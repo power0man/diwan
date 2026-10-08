@@ -201,3 +201,15 @@ def test_accepted_is_refused_after_a_later_rejection_on_the_same_head(tmp_path):
     with pytest.raises(TransitionError) as exc:
         ledger.append(7, "accepted", head_sha=head, merge_sha="m" * 40)
     assert exc.value.code == "review_rejected_after_verified"
+
+
+def test_a_revision_round_needs_its_evidence(tmp_path):
+    """قيدُ بدء جولة إعادة العمل يحمل الجولةَ والمعرّفَ والبدءَ وبصمةَ التكليف ومرجعَ السبب؛ وغيابُ واحدٍ يُرفض (#349)."""
+    ledger = _ledger(tmp_path)
+    _dispatch(ledger)
+    ledger.append(7, "completed", head_sha="a" * 40, branch="team/7-anthropic", pr=9)
+    with pytest.raises(TransitionError) as exc:
+        ledger.append(7, "revision_started", pid=1, started_at="2026-10-06T10:00:00+00:00", brief_sha256="b" * 64, reason_ref="c-1")
+    assert exc.value.code == "evidence_missing:round"
+    ledger.append(7, "revision_started", round=1, pid=1, started_at="2026-10-06T10:00:00+00:00", brief_sha256="b" * 64, reason_ref="c-1")
+    assert ledger.last(7)["state"] == "revision_started"

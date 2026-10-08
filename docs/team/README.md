@@ -11,7 +11,7 @@
 | الملف | ما يفعل | عامٌّ أم خاصٌّ بديوان |
 |---|---|---|
 | `team/ledger.py` | سجلُّ التحوّلات؛ يرث `core/ledger.py`؛ ستُّ حالات ورأسٌ واحد لكل دليل | عام |
-| `team/dispatch.py` | `run` / `validate` / `accept` / `resume` / `takeover` / `gc` / `status` | عام |
+| `team/dispatch.py` | `run` / `validate` / `accept` / `resume` / `revise` / `takeover` / `gc` / `status` | عام |
 | `team/review.py` | دورُ المراجع المستقل، والمعايرة، وتعليقُ ق٧٥(ب) | عام |
 | `team/doctor.py` | تثبيتُ إصدارات الأدوات وبصمات ثنائيّاتها | عام |
 | `team/adapters/` | عقدُ محوِّل الوكيل وتنفيذا Claude وCodex؛ لا أعلامَ تجاوز | عام |
@@ -28,7 +28,7 @@
 الشرط: `validated_head_sha == reviewed_head_sha == merge_candidate_head_sha`؛ وإيداعٌ جديد يُسقط ما قبله إلى `completed`.
 الجانبية: `outcome_unknown` (**لا يُعاد التشغيل**)، `validation_failed`، `expired`، `worker_unavailable:<code>`،
 `reviewer_unavailable:<code>`، `brief_stale`، `frozen_by_launch_plan`، `already_dispatched`، `review_uncalibrated`،
-`reviewed_awaiting_validation`، `review_rejected` (مراجعةٌ رافضة لا تصير `verified` أبدًا، والأحدثُ على الرأس يطغى)، `external_review`
+`reviewed_awaiting_validation`، `review_rejected` (مراجعةٌ رافضة لا تصير `verified` أبدًا، والأحدثُ على الرأس يطغى؛ وتعود إلى العامل نفسِه بـ`revise`)، `revision_started` (جولةُ إعادة عملٍ بدليلها؛ ثلاثٌ ثم طابورُ المالك)، `external_review`
 (طلبٌ لم يفتحه الفريق، أو طلبُ محاولةٍ سابقة بعد استحواذ: يُقيَّد على محاولته ولا يمسّ الجارية)، `takeover`.
 السجلُّ (`~/.diwan-team/dispatch.jsonl`) يُفتح ويُلحَق تحت قفلٍ حصريّ على `dispatch.jsonl.lock`؛ فأمران متزامنان لا يكسران السلسلة.
 و`resume` يستعيد إطلاقًا انقطع عنه المرسِل قبل قيد `claimed` إن شهد له ملفُّ معرّف العملية؛ وإلا قيّد `outcome_unknown` بسبب
@@ -55,6 +55,7 @@ python3 -m team.dispatch run <issue> --worker claude            # خطةٌ بل�
 python3 -m team.dispatch run <issue> --worker claude --execute  # إرسالٌ فعلي
 python3 -m team.review <pr> --execute                           # مراجعةٌ مستقلّة وتعليق
 python3 -m team.dispatch validate <issue>; python3 -m team.dispatch accept <issue>
+python3 -m team.dispatch revise <issue> --execute                  # مراجعةٌ رافضة تعود إلى العامل نفسِه (#348)
 ```
 الموطن: `~/.diwan-team/` (السجلّ، والتثبيتات، والمعايرة، والمخرجات الخام). نسخُ العمل تحت `~/diwan-work/wt/team-<issue>-<family>`.
 

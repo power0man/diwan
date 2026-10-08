@@ -91,6 +91,10 @@ class ProjectAdapter:
         """يعلّق ويعيد مرجعَ التعليق."""
         raise NotImplementedError("comment")
 
+    def review_text(self, ref: str) -> str:
+        """نصُّ مراجعةٍ بمرجعها (كما أعاده `comment`)؛ بياناتٌ تُحجر قبل أن تدخل تكليفًا."""
+        raise NotImplementedError("review_text")
+
     def checks(self, head_sha: str) -> str:
         """حالةُ فحوص الرأس: success | failure | pending | none."""
         raise NotImplementedError("checks")

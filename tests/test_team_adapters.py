@@ -173,3 +173,36 @@ def test_the_wrapper_records_its_own_pid_first_and_refuses_to_release_after_a_ta
     proc = adapter.start(["/bin/sh", "-c", f"echo ran > '{marker}'"], "", tmp_path, raw / "out", raw / "err", exit_path=raw / "exit")
     assert proc.wait(timeout=60) == 125 and (raw / "exit").read_text() == "125" and not marker.exists()
     assert (raw / "wrapper_pid").read_text().strip() == str(proc.pid) and (raw / "child_pid").exists()
+
+
+def test_the_wrapper_sees_a_takeover_marker_in_the_attempt_directory_above_its_round(tmp_path):
+    """عاملُ جولةِ إعادة عملٍ في `attempt-N/revision-R/` يرى علامةَ `taken_over` في `attempt-N/` فلا يُطلَق (ملاحظة Codex الرابعة على #349)."""
+    adapter = ClaudeAdapter(binary=tmp_path / "claude")
+    attempt = tmp_path / "attempt-1"
+    raw = attempt / "revision-1"
+    raw.mkdir(parents=True)
+    (attempt / "taken_over").write_text("2026-10-07T00:00:00+00:00", encoding="utf-8")
+    marker = tmp_path / "ran"
+    proc = adapter.start(["/bin/sh", "-c", f"echo ran > '{marker}'"], "", tmp_path, raw / "out", raw / "err", exit_path=raw / "exit")
+    assert proc.wait(timeout=60) == 125 and not marker.exists()
+
+
+def test_the_claude_worker_model_is_explicit_and_its_identity_follows_it(tmp_path, monkeypatch):
+    """بلا `--model` يرث العاملُ نموذجَ الحساب الافتراضي فيُسقطهم نفادُ حصّته معًا؛ الضبطُ صريح، والهويّةُ المنشورة تتبع النموذج."""
+    from team.adapters import claude as cl
+
+    monkeypatch.delenv(cl.MODEL_ENV, raising=False)
+    plain = cl.ClaudeAdapter(binary=tmp_path / "claude")
+    assert "--model" not in plain.work_argv(tmp_path, 1.0, tmp_path) and plain.agent_id == "anthropic/claude-fable-5-1"
+    monkeypatch.setenv(cl.MODEL_ENV, "claude-opus-5-5")
+    pinned = cl.ClaudeAdapter(binary=tmp_path / "claude")
+    work, review = pinned.work_argv(tmp_path, 1.0, tmp_path), pinned.review_argv(tmp_path, "main")
+    assert work[work.index("--model") + 1] == "claude-opus-5-5" and review[review.index("--model") + 1] == "claude-opus-5-5"
+    assert pinned.agent_id == "anthropic/claude-opus-5-5"
+    assert cl.agent_id_for("claude-sonnet-5-5") == "anthropic/claude-sonnet-5-5"
+
+
+def test_a_model_limit_message_is_quota_exhaustion_without_a_429(tmp_path):
+    """«You've reached your Fable limit» صُنّف ليلةَ ٧ أكتوبر بمطابقةٍ عارضة لـ429؛ صار نمطًا صريحًا."""
+    text = '{"type":"result","is_error":true,"result":"You\'ve reached your Fable limit. Switch to another model."}'
+    assert base.unavailable_code(1, text) == "quota_exhausted"

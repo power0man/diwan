@@ -71,7 +71,8 @@ def main(argv: list[str]) -> int:
     except BaseException:
         os.close(go_w)                             # لا إذن: يخرج الابنُ بلا تنفيذ
         raise
-    if pid_file.with_name("taken_over").exists():
+    if pid_file.with_name("taken_over").exists() or (pid_file.parent.parent / "taken_over").exists():
+        # العلامةُ في مجلّد المحاولة (يكتبها takeover) تحكم عمّالَ الجولات في مجلّداتها الفرعية أيضًا (ملاحظة Codex الرابعة على #349)
         os.close(go_w)                             # استُحوذ على المحاولة قبل أن نأذن: لا تنفيذَ ثانيًا
         os.close(err_r)
         _, status = os.waitpid(pid, 0)

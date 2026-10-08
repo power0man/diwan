@@ -32,6 +32,25 @@ ISOLATION_FLAGS = ("--setting-sources", "project", "--strict-mcp-config", "--dis
 REVIEW_TOOLS = ("Read", "Grep", "Glob", "Bash(git diff:*)", "Bash(git log:*)", "Bash(git show:*)")
 
 
+# نموذجُ العامل صراحةً: بلا `--model` يرث العاملُ النموذجَ الافتراضي لحساب المالك، فنفادُ حصّته يُسقط كلَّ العمّال معًا
+# (ليلةُ ٧ أكتوبر: «You've reached your Fable limit» على أربعة عمّال). المعرّفُ في سجلّ العملاء لكل نموذج.
+MODEL_ENV = "DIWAN_TEAM_CLAUDE_MODEL"
+AGENT_IDS = {"claude-opus-5-5": "anthropic/claude-opus-5-5", "opus": "anthropic/claude-opus-5-5",
+             "claude-fable-5-1": "anthropic/claude-fable-5-1", "fable": "anthropic/claude-fable-5-1"}
+DEFAULT_AGENT_ID = "anthropic/claude-fable-5-1"
+
+
+def default_model() -> str | None:
+    return os.environ.get(MODEL_ENV) or None
+
+
+def agent_id_for(model: str | None) -> str:
+    """معرّفُ العميل المسجَّل للنموذج الذي يعمل فعلًا؛ نموذجٌ لا معرّفَ له يبقى باسمه فلا يُنسب إلى غيره."""
+    if not model:
+        return DEFAULT_AGENT_ID
+    return AGENT_IDS.get(model, f"anthropic/{model}")
+
+
 def default_binary() -> Path:
     env = os.environ.get("DIWAN_TEAM_CLAUDE_BIN")
     if env:
@@ -48,7 +67,11 @@ class ClaudeAdapter(Adapter):
 
     def __init__(self, binary: Path | None = None, model: str | None = None):
         self.binary = Path(binary) if binary else default_binary()
-        self.model = model if model is not None else os.environ.get("DIWAN_TEAM_CLAUDE_MODEL", "")
+        self.model = model if model is not None else (default_model() or "")
+
+    @property
+    def agent_id(self) -> str:
+        return agent_id_for(self.model)
 
     def model_flags(self) -> list[str]:
         return ["--model", self.model] if self.model else []
