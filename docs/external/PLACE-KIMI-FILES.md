@@ -27,6 +27,15 @@
 | `sealed/` كلّه | `~/diwan-sealed/kimi_v1/`، خارج ديوان، ولا يقرؤه غيرك |
 | `arabic_general_v3_1.json` و`arabic_general_v3_2.json` و`agentic_v3.json` و`agentic_v3.meta.json` (منذ v1.2، إن وُجدت) | `~/diwan-work/diwan-public/evaluation/suites/`، وهي مفتوحةٌ كلُّها فلا تمرّ بالبيان |
 
+   **ما سُلّم من بنكَي التطوير وما بقي** (التكليفُ في `KIMI-NEXT.md` باقٍ بنصّه مرجعًا تاريخيًّا):
+
+   | الملف | حالته | دليلُه |
+   |---|---|---|
+   | `arabic_general_v3_1.json`، `arabic_general_v3_2.json` | **سُلّما وأُودعا** بايتًا ببايت من تسليم ٦ أكتوبر (الجزء ٢)، ومجمَّدان ببصمتيهما | استلامُ `docs/probe/kimi-v12-intake-round3-20261006.json`، وتجميدُ `docs/probe/k43-general-150-20261007.json` |
+   | `agentic_v3.json`، `agentic_v3.meta.json` | **لم يوضعا بعد** في `evaluation/suites/` | — |
+
+   فإن أُعيد الأمرُ على التسليم نفسِه، تخطّى المودَعَين بلا كتابة بشرط أن يكون المصدرُ والهدفُ بالبصمة المثبتة في
+   الأمر، والهدفُ والإيصالُ مودَعين في git بلا تعديل، والإيصالُ يحمل البصمة. وما عدا ذلك «موجود من قبل».
 5. يتأكّد أنه لا يوجد ملفٌّ محجوب داخل ديوان عدا البيان.
 6. **لا يُودع ولا يدفع.** ذلك عمل ذكاء ديوان المحلّي، بعد أن ينفّذ ك١ (الفحص) وك٥ (المراجعة
    الخارجية).
@@ -38,7 +47,7 @@
 ```bash
 bash <<'KIMI'
 # توزيع ملفّات Kimi على أماكنها. يُشغَّل من داخل مجلّد kimi-benchmark.
-# لا يقرأ شيئًا من مستودع ديوان، ولا يعرض محتوى أي ملفٍّ محجوب، ولا يُودع ولا يدفع.
+# لا يقرأ من مستودع ديوان إلا حالةَ git وبصماتِ بنكَي التطوير المودَعين وإيصالَ تجميدهما العامّ، ولا يعرض محتوى أي ملفٍّ محجوب، ولا يُودع ولا يدفع.
 set -euo pipefail
 SRC="${SRC:-$PWD}"
 DIWAN="${DIWAN:-$HOME/diwan-work/diwan-public}"
@@ -75,9 +84,45 @@ else
 fi
 # بنكا التطوير (منذ v1.2) مفتوحان كلُّهما، ويُنسخان إن سلّمهما Kimi
 DEV="arabic_general_v3_1.json arabic_general_v3_2.json agentic_v3.json agentic_v3.meta.json"
+# ما سُلّم منها وأُودع وجُمّد ببصمته (الجزء ٢، تسليمُ ٦ أكتوبر، ك٤٣ #28): اسمٌ=بصمة، وإيصالُ التجميد العامّ.
+# لا يُنسخ من جديد، ويُتخطّى بلا كتابة إن كان المصدرُ والهدفُ والبصمةُ المثبتة هنا والإيصالُ المودَع كلُّها بالبايتات نفسها؛
+# وأيُّ خلافٍ (هدفٌ غيرُ مودَع، أو معدَّل، أو مصدرٌ آخر، أو إيصالٌ لا يحملها) يوقف التوزيعَ كلَّه قبل أيّ نسخ.
+DELIVERED="arabic_general_v3_1.json=680887a3b0dc8e7e587cc5ad4cabfe5e10ca8e5aada9a8d190fd7cd3da0c2be9
+arabic_general_v3_2.json=b9b358dcc3bcf1ff10f60ce3ce23d9438823e9bb2f84ed926cc466aa1b4edb40"
+RECEIPT="docs/probe/k43-general-150-20261007.json"
+sha() { python3 -c 'import hashlib,sys;print(hashlib.sha256(open(sys.argv[1],"rb").read()).hexdigest())' "$1"; }
+committed() { git -C "$DIWAN" ls-files --error-unmatch -- "$1" >/dev/null 2>&1 &&
+  [ -z "$(git -C "$DIWAN" status --porcelain -- "$1")" ]; }
+# الإيصالُ يُقرأ JSON لا نصًّا: إيصالُ تجميد ك٤٣ بنوعه وحالته، وفيه المسارُ العامّ مرّةً واحدة ببصمته هو؛
+# وإيصالٌ تالفٌ أو مكرَّرُ المسار، أو بصمةٌ تحت مسارٍ آخر، لا يُثبت شيئًا.
+frozen_at() { python3 - "$DIWAN/$RECEIPT" "evaluation/suites/$1" "$2" <<'PY'
+import json, sys
+receipt, path, digest = sys.argv[1:]
+try:
+    data = json.load(open(receipt, encoding="utf-8"))
+    files = data["files"]
+    ok = (data["kind"] == "k43_general_bank_freeze" and data["status"] == "frozen_not_measured"
+          and isinstance(files, list) and files and all(isinstance(e, dict) for e in files))
+    paths = [e.get("path") for e in files] if ok else []
+    ok = ok and len(set(paths)) == len(paths)
+    ok = ok and [e.get("path") for e in files if e.get("sha256") == digest] == [path]
+except Exception:
+    ok = False
+sys.exit(0 if ok else 1)
+PY
+}
+FULFILLED=""
 for f in $DEV; do
-  [ ! -e "$SRC/$f" ] || [ ! -e "$DIWAN/evaluation/suites/$f" ] || {
-    echo "توقّفت: $DIWAN/evaluation/suites/$f موجود من قبل، ولم أغيّر شيئًا"; exit 1; }
+  dst="$DIWAN/evaluation/suites/$f"
+  [ -e "$SRC/$f" ] && [ -e "$dst" ] || continue
+  pinned=$(printf '%s\n' "$DELIVERED" | awk -F= -v f="$f" '$1 == f {print $2}')
+  if [ -n "$pinned" ] && [ "$(sha "$SRC/$f")" = "$pinned" ] && [ "$(sha "$dst")" = "$pinned" ] &&
+     committed "evaluation/suites/$f" && committed "$RECEIPT" &&
+     frozen_at "$f" "$pinned"; then
+    FULFILLED="$FULFILLED $f"
+  else
+    echo "توقّفت: $dst موجود من قبل، ولم أغيّر شيئًا"; exit 1
+  fi
 done
 
 # ٣ — البيان يطابق الملفّات المحجوبة قبل أي نسخ (أعدادٌ وعلامات فقط، بلا محتوى)
@@ -134,6 +179,7 @@ if [ "${OPEN_ONLY:-0}" != 1 ]; then
   chmod -R go-rwx "$SEALED_DST"
 fi
 for f in $DEV; do
+  case " $FULFILLED " in *" $f "*) echo "✓ بنك تطوير مودَعٌ من قبل بالبصمة نفسها، لم يُمسّ: $f"; continue ;; esac
   [ ! -e "$SRC/$f" ] || { mkdir -p "$DIWAN/evaluation/suites"
     cp "$SRC/$f" "$DIWAN/evaluation/suites/$f"; echo "✓ بنك تطوير: $f"; }
 done
