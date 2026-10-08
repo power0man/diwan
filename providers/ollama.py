@@ -20,10 +20,12 @@
 """
 from __future__ import annotations
 
+import dataclasses
 import json
 import urllib.error
 import urllib.request
 
+from core import prices
 from core.contracts import Request, Response
 from core.locality import is_cloud_model, is_loopback_url
 from core.validate import validated
@@ -59,8 +61,28 @@ class OllamaProvider:
         """نسخةٌ من المزوّد ببذرة قياسٍ معلنة، مع حفظ بقية إعداد الاتصال."""
         return type(self)(self.model, self.base_url, self.allow_thinking, seed)
 
-    def estimate_micros(self, request: Request) -> int:
-        return 0  # محليّ: لا فاتورة مالية — انظر توثيق الوحدة
+    def estimate_micros(self, request: Request | None) -> int:
+        # محليّ: لا فاتورة مالية (انظر توثيق الوحدة). والسحابيُّ (`:cloud`، ولو عبر الخادم المحليّ الممرِّر) يُسعَّر من
+        # `registry/prices.json`: الاشتراكُ الثابت صفرٌ بأساسه، وما لا مدخلَ له `price_unknown` قبل الشبكة لا صفرٌ مفترض
+        # (جديد-spend-ledger، #295). وتقديرٌ بلا `Request` صفرٌ للمزوّد المحليّ وحده (نموذجٌ غيرُ سحابيّ على loopback)؛
+        # وغيرُه `estimate_request_required` قبل أي شبكة، فلا سعرَ يُقرأ لطلبٍ لا نموذجَ له ولا حدَّ مخرَج
+        if not isinstance(request, Request):
+            if not is_cloud_model(self.model) and is_loopback_url(self.base_url):
+                return 0
+            raise ProviderError("estimate_request_required",
+                                "تقديرُ كلفة مزوّدٍ غير محليّ يحتاج طلبًا مكتملًا (Request)", retryable=False)
+        # والمسعَّرُ النموذجُ الذي يُرسل (`payload` يرسل `self.model` لا `request.model`): فلا يُقدَّر نموذجٌ سحابيٌّ بلا سعر
+        # بصفرٍ لأن الطلبَ حمل اسمًا مسعَّرًا، ولا يُرفض محليٌّ لأن الطلبَ حمل اسمًا سحابيًّا (ملاحظة Codex على #352). والصفرُ
+        # للمحليّ وحده (`is_local`: نموذجٌ غيرُ سحابيّ على loopback)؛ فنقطةٌ بعيدةٌ بنموذجٍ عاديّ قد تكون مدفوعة، فتُسعَّر من
+        # الجدول أو تُرفض `price_unknown` قبل الشبكة (ملاحظة Codex الثانية على #352)
+        if self.is_local:
+            return 0
+        try:
+            entry = prices.lookup(prices.load(), "ollama", self.model)
+            return prices.micros(entry, sum(len(m.content.encode("utf-8")) for m in request.messages),
+                                 request.max_output)
+        except (prices.PriceUnknown, prices.PricesMalformed) as e:
+            raise ProviderError("price_unknown", f"لا سعرَ مقروءًا للنموذج السحابيّ: {e}", retryable=False) from e
 
     _tool_payload = staticmethod(tool_payload)
 
@@ -132,7 +154,17 @@ class OllamaProvider:
                 out = self._post(payload, request.deadline_s)
             else:
                 raise
-        return self._to_response(out, request=request)
+        response = self._to_response(out, request=request)
+        if self.is_local:
+            return response
+        # غيرُ المحليّ يُسوّى بتوكناته وسعرِ المدخل نفسِه الذي حُجز عليه، لا بصفر المحليّ في الترميز: مدخلٌ مسعَّرٌ بالتوكن كان يُحجز
+        # ثم يُعاد محجوزُه كلُّه فيُقيَّد صفرًا ولا يحدّ السقفُ شيئًا (ملاحظة Codex على #352). والاشتراكُ الثابت صفرٌ بأساسه كما كان
+        try:
+            entry = prices.lookup(prices.load(), "ollama", self.model)
+            cost = prices.micros(entry, response.usage.input_tokens, response.usage.output_tokens)
+        except (prices.PriceUnknown, prices.PricesMalformed) as e:
+            raise ProviderError("price_unknown", f"لا سعرَ مقروءًا للنموذج السحابيّ: {e}", retryable=False) from e
+        return dataclasses.replace(response, cost_micros=cost)
 
     _messages = staticmethod(serialize_messages)
 

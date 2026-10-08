@@ -13,6 +13,7 @@ import urllib.request
 
 import pytest
 
+from core.ledger import Ledger
 from evaluation.external_review import DEFAULT_REVIEWERS, _slug, smoke_bank
 from evaluation.multi_system_review import AutomaticReviewError
 from tools import external_review as cli
@@ -139,6 +140,18 @@ def test_the_ollama_smoke_evidence_carries_every_call_and_the_totals(tmp_path, m
         model: 120 for model in DEFAULT_REVIEWERS}
 
 
+def test_the_smoke_core_run_ledger_is_kept_beside_its_report(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex على #352: كان سجلُّ `core.run` لتشغيل الدخان في مجلّدٍ مؤقّت يزول، والدليلُ المنشور يسمّيه. فصار بجانب
+    التقرير، مُرسًّى، وفيه نداءاتُ التقرير نفسُها."""
+    _wire(monkeypatch, _Opener(_reply(prompt_eval_count=100, eval_count=20)))
+    out = tmp_path / "probe" / "smoke.json"
+    assert cli.main(["--smoke", str(out)]) == 0
+    ledger = Ledger(out.with_name("smoke.core-run-ledger.jsonl"), create=False)
+    core_run = json.loads(out.read_text(encoding="utf-8"))["core_run"]
+    assert core_run["ledger"] == str(ledger.path) and ledger.verify_chain(strict=True)
+    assert [e["record"]["kind"] for e in ledger.entries()] == ["ok"] * len(core_run["calls"]) == ["ok"] * len(DEFAULT_REVIEWERS)
+
+
 def test_the_ollama_bank_summary_carries_every_call_and_the_totals(tmp_path, monkeypatch, capsys):
     bank = smoke_bank(tmp_path)
     _wire(monkeypatch, _Opener(_reply(prompt_eval_count=50, eval_count=10)))
@@ -147,6 +160,54 @@ def test_the_ollama_bank_summary_carries_every_call_and_the_totals(tmp_path, mon
     assert len(summary["provider_usage"]) == len(DEFAULT_REVIEWERS)
     assert all(t == {"calls": 1, "calls_with_incomplete_usage": 0, "prompt_tokens": 50, "completion_tokens": 10,
                      "total_tokens": 60} for t in summary["token_totals"].values())
+
+
+def test_the_ollama_bank_summary_and_result_carry_the_core_run_spend(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex على #352: كان تقريرُ `core.run` يُكتب في دليل الدخان وحده، فخلاصةُ البنك وما يُطبع بلا ما سُوّي ولا الرفضِ
+    ولا مسارِ السجلّ، وصفوفُ Ollama تُبقي `cost_usd` فارغًا."""
+    bank = smoke_bank(tmp_path)
+    _wire(monkeypatch, _Opener(_reply(prompt_eval_count=50, eval_count=10)))
+    assert cli.main([str(bank)]) == 0
+    printed = json.loads(capsys.readouterr().out)
+    summary = json.loads((bank / "reviews" / "SUMMARY.json").read_text(encoding="utf-8"))
+    ledger = Ledger(bank / "core-run-ledger.jsonl", create=False)
+    assert ledger.verify_chain(strict=True) and len(ledger.entries()) == len(summary["provider_usage"])
+    for core_run in (summary["core_run"], printed["core_run"]):
+        assert core_run["ledger"] == str(ledger.path) and core_run["settled_usd"] == "0"
+        assert len(core_run["calls"]) == len(summary["provider_usage"]) and core_run["refusals"] == []
+
+
+def test_an_ollama_rerun_keeps_the_core_run_report_of_the_reviews_it_skips(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex على #352: الإعادةُ على بنكٍ مراجَع تتخطّى سجلّاته فتقريرُ `core.run` لها فارغ، وكان يستبدل في الخلاصة تقريرَ
+    التشغيل الأول فتختفي نداءاتُه ورفضُه مع بقائها في السجلّ. فالخلاصةُ تراكميّة، وما يُطبع لهذا التشغيل وحده."""
+    bank = smoke_bank(tmp_path)
+    _wire(monkeypatch, _Opener(_reply(prompt_eval_count=50, eval_count=10)))
+    assert cli.main([str(bank)]) == 0
+    capsys.readouterr()
+    first = json.loads((bank / "reviews" / "SUMMARY.json").read_text(encoding="utf-8"))["core_run"]
+    assert cli.main([str(bank)]) == 0
+    printed = json.loads(capsys.readouterr().out)["core_run"]
+    again = json.loads((bank / "reviews" / "SUMMARY.json").read_text(encoding="utf-8"))["core_run"]
+    assert first["calls"] and printed["calls"] == [] and printed["refusals"] == []
+    assert (again["calls"], again["refusals"], again["settled_usd"], again["ledger"]) \
+        == (first["calls"], first["refusals"], first["settled_usd"], first["ledger"])
+
+
+def test_the_bank_summary_rebuilds_core_run_from_the_ledger_after_a_failed_run(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex على #352: تشغيلٌ سقط بعد أن قيّد السجلُّ نداءاتِه لا يكتب `core_run` في الخلاصة، والإعادةُ تتخطّى ما رُوجع؛ فكان
+    الدمجُ من الخلاصة يُسقط تلك النداءات. فالتقريرُ التراكميّ يُبنى من السجلّ المبصوم نفسِه، ومعه تقريرُ التشغيل الأخير."""
+    bank = smoke_bank(tmp_path)
+    _wire(monkeypatch, _Opener(_reply(prompt_eval_count=50, eval_count=10)))
+    assert cli.main([str(bank)]) == 0
+    path = bank / "reviews" / "SUMMARY.json"
+    summary = json.loads(path.read_text(encoding="utf-8"))
+    sent = len(summary["provider_usage"])
+    del summary["core_run"]
+    path.write_text(json.dumps(summary), encoding="utf-8")
+    assert cli.main([str(bank)]) == 0
+    core_run = json.loads(path.read_text(encoding="utf-8"))["core_run"]
+    assert core_run["verified"] is True and len(core_run["calls"]) == core_run["entries"] == sent > 0
+    assert core_run["last_run"]["calls"] == []
 
 
 def test_a_rerun_on_a_reviewed_bank_keeps_the_earlier_ledger(tmp_path, monkeypatch, capsys):
@@ -182,8 +243,8 @@ def test_a_refused_ollama_run_still_prints_the_calls_that_went_out(tmp_path, mon
     _wire(monkeypatch, _Opener(_reply(prompt_eval_count=1, eval_count=1)))
     real = cli.build_transport
 
-    def transport_then_refuse(base_url):
-        chat = real(base_url)
+    def transport_then_refuse(base_url, **kw):
+        chat = real(base_url, **kw)
         chat("deepseek-v4.1-flash:cloud", "s", "u", {})
         return chat
 

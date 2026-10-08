@@ -233,32 +233,45 @@ def test_the_protocol_is_registered_and_names_six_components():
             assert arm(spec["arms"]["on"]) != arm(spec["arms"]["off"]), name
 
 
-LEDGER = ROOT / "evaluation" / "protocols" / "ablation_v1.runs.json"
+LEDGERS = {HISTORICAL_PROTOCOL: ROOT / "evaluation" / "protocols" / "ablation_v1.runs.json",
+           PROTOCOL: ROOT / "evaluation" / "protocols" / "ablation_v2.runs.json"}
 
 
-def test_every_ablation_report_is_recorded_in_the_run_ledger():
-    """البروتوكولُ مبصومٌ فلا تتغيّر حالتُه داخله؛ فكلُّ تقريرِ استئصالٍ في docs/probe صفٌّ في دفتر التشغيل بقراره
-    وبصمةِ البروتوكول التي قيس بها، وحالةُ الدفتر تتبع ما شُغّل من المكوّنات (الخطة §٥٨٦ البند ٥)."""
-    ledger = json.loads(LEDGER.read_text(encoding="utf-8"))
-    assert ledger["protocol_sha256"] == hashlib.sha256(HISTORICAL_PROTOCOL.read_bytes()).hexdigest()
+def test_every_ablation_report_is_recorded_in_the_run_ledger_of_its_protocol():
+    """البروتوكولُ مبصومٌ فلا تتغيّر حالتُه داخله؛ فكلُّ تقريرِ استئصالٍ في docs/probe صفٌّ في دفتر تشغيلِ البروتوكول الذي قيس
+    به (بصمتُه في الحكم) بقراره ونسخةِ مُشغِّله، وحالةُ كلِّ دفترٍ تتبع ما شُغّل من مكوّنات بروتوكوله (الخطة §٥٨٦ البند ٥).
+    ودفترُ v2 (#192) بجانب دفتر v1 لا بديلًا عنه: تقريرا v1 لا يصيران دليلَ v2، وما يُشغَّل اليوم يُقيَّد في دفتر v2."""
+    ledgers = {}
+    for protocol_path, ledger_path in LEDGERS.items():
+        ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
+        assert ledger["protocol"] == protocol_path.relative_to(ROOT).as_posix(), ledger_path.name
+        assert ledger["protocol_sha256"] == hashlib.sha256(protocol_path.read_bytes()).hexdigest(), ledger_path.name
+        ledgers[ledger["protocol_sha256"]] = (ledger, json.loads(protocol_path.read_text(encoding="utf-8")))
+    assert ablation.judge("search", [], [])["protocol_sha256"] in ledgers    # ما يُشغَّل اليوم له دفترٌ يُقيَّد فيه
     reports = {}
     for path in sorted((ROOT / "docs" / "probe").glob("*.json")):
         data = json.loads(path.read_text(encoding="utf-8"))
         if isinstance(data, dict) and data.get("kind") == "ablation_report":
-            reports[path.relative_to(ROOT).as_posix()] = data["judgment"]
-    recorded = {run["evidence"]: run for run in ledger["runs"]}
-    assert set(recorded) == set(reports), "كلُّ تقرير استئصالٍ في docs/probe له صفٌّ في " + LEDGER.name
-    for evidence, judgment in reports.items():
-        run = recorded[evidence]
+            reports[path.relative_to(ROOT).as_posix()] = data
+    rows = [(run["evidence"], run, sha) for sha, (ledger, _) in ledgers.items() for run in ledger["runs"]]
+    # كلُّ تقريرٍ صفٌّ واحدٌ في دفترٍ واحد: القاموسُ كان يطوي التكرارَ في دفترٍ أو بين دفترين فيُفحص آخرُ صفٍّ وحده
+    # (ملاحظة Codex على #351)
+    evidence = [entry for entry, _, _ in rows]
+    assert sorted({entry for entry in evidence if evidence.count(entry) > 1}) == [], "تقريرٌ مقيَّدٌ أكثرَ من مرّة"
+    recorded = {entry: (run, sha) for entry, run, sha in rows}
+    assert set(recorded) == set(reports), "كلُّ تقرير استئصالٍ في docs/probe له صفٌّ في دفتر بروتوكوله"
+    for evidence, report in reports.items():
+        run, sha = recorded[evidence]
+        judgment = report["judgment"]
+        assert judgment["protocol_sha256"] == sha, evidence                 # قُيّد في دفتر البروتوكول الذي قيس به
         assert (run["component"], run["decision"]) == (judgment["component"], judgment["decision"]), evidence
-        report = json.loads((ROOT / evidence).read_text(encoding="utf-8"))
         assert run["runner_version"] == report["config"]["runner_version"], evidence
-        assert judgment["protocol_sha256"] == ledger["protocol_sha256"], evidence
-    ran = {run["component"] for run in ledger["runs"]}
-    assert ran <= set(HISTORICAL_DATA["components"])
-    expected = ("registered_not_run" if not ran else "run"
-                if ran == set(HISTORICAL_DATA["components"]) else "partially_run")
-    assert ledger["status"] == expected
+    for ledger, data in ledgers.values():
+        ran = {run["component"] for run in ledger["runs"]}
+        assert ran <= set(data["components"])
+        expected = ("registered_not_run" if not ran else "run"
+                    if ran == set(data["components"]) else "partially_run")
+        assert ledger["status"] == expected, ledger["protocol"]
 
 
 def test_the_sample_is_drawn_from_eligible_cases_so_it_reaches_its_target():
@@ -359,6 +372,198 @@ def test_three_seeds_reach_the_provider_and_each_case_uses_strict_majority(tmp_p
     assert [row["seed"] for row in on["seed_results"]] == [0, 1, 2]
     assert on["passed"] is True and on["passed_seeds"] == 2 and on["majority_threshold"] == 2
     assert off["passed"] is False and off["passed_seeds"] == 1 and off["majority_threshold"] == 2
+
+
+def test_a_resumed_night_reuses_measured_rows_and_retries_errors(tmp_path):
+    """الخطة ك٤٦ البند ٤: تشغيلٌ قابلٌ للاستئناف إن نفدت الحصّة. بثلاث بذور في ذراعين تطول الليلةُ ثلاثَ مرّات، فيُخبّأ كلُّ
+    صفٍّ مقيس فور قياسه، ويُعاد العاطبُ وحده عند الاستئناف؛ وصفٌّ من بصمة محرّكٍ أخرى لا يُستأنف به (#190)."""
+    from evaluation.ablation import RunCache, run_seeded_arm
+    cases = [_case("c0", "ما عاصمة المغرب؟", [{"kind": "contains", "value": "الرباط"}]),
+             _case("c1", "ما عاصمة تونس؟", [{"kind": "contains", "value": "تونس"}])]
+    state, path = {"quota_exhausted": True, "calls": []}, tmp_path / "night.jsonl"
+
+    class Night(Replay):
+        def complete(self, request):
+            user = decode_input(request.messages[-1].content)["user_request"]
+            state["calls"].append((self.seed, user[-5:-1]))
+            if state["quota_exhausted"] and self.seed == 2 and "تونس" in user:
+                raise RuntimeError("quota")
+            return Response("الرباط" if "المغرب" in user else "تونس", Usage(1, 1), "complete", 0,
+                            provider="replay", model_version="v1")
+
+    def night(model_version="v1"):
+        state["calls"] = []
+        return run_seeded_arm(cases, Night(None), arm(), (0, 1, 2), RunCache(path), model="replay",
+                              model_version=model_version)
+
+    first = night()
+    assert len(state["calls"]) == 6 and first[0]["passed"] is True
+    assert first[1]["status"] == "error" and first[1]["error_seeds"] == [2]
+    cached = RunCache(path).rows
+    assert len(cached) == 5 and all(row["status"] == "measured" for row in cached.values())
+    state["quota_exhausted"] = False
+    second = night()                                            # الاستئنافُ يعيد العاطبَ وحده، من الملف لا من الذاكرة
+    assert state["calls"] == [(2, "تونس")]
+    assert [row["passed"] for row in second] == [True, True] and len(RunCache(path).rows) == 6
+    assert [r["seed"] for r in second[1]["seed_results"]] == [0, 1, 2]
+    night("v2")                                                 # بصمةُ محرّكٍ أخرى: لا صفَّ يُستأنف به
+    assert len(state["calls"]) == 6
+
+
+def test_a_partially_written_checkpoint_row_is_dropped_and_the_night_resumes(tmp_path):
+    """ملاحظة Codex الثانية على #192: انقطاعُ العملية في منتصف كتابة صفٍّ كان يُفشل الاستئنافَ كلَّه بـJSONDecodeError قبل
+    استعادة الصفوف السليمة. فالذيلُ بلا سطرٍ جديد يُقتطع ويُعاد قياسُه؛ وسطرٌ فاسد في الوسط عطبُ ملفٍّ يُرفض باسمه."""
+    from evaluation.ablation import RunCache
+    path = tmp_path / "night.jsonl"
+    good = json.dumps({"key": "k0", "row": {"id": "c0", "status": "measured", "passed": True}}) + "\n"
+    partial = '{"key": "k1", "row": {"id": "c1", "status": "meas'
+    path.write_text(good + partial, encoding="utf-8")
+    cache = RunCache(path)
+    assert cache.rows == {"k0": {"id": "c0", "status": "measured", "passed": True}} and cache.dropped_partial_tail
+    assert path.read_text(encoding="utf-8") == good                     # اقتُطع الذيلُ من الملف نفسِه
+    assert cache.partial_tail_aside.read_text(encoding="utf-8") == partial  # وحُفظت بايتاتُه بجانبه (ملاحظة Codex على #351)
+    cache.put("k1", {"id": "c1", "status": "measured", "passed": False})
+    again = RunCache(path)                                              # والسطرُ التالي يُلحَق سليمًا بعد الاقتطاع
+    assert set(again.rows) == {"k0", "k1"} and not again.dropped_partial_tail
+    path.write_text(good + "{broken\n" + good, encoding="utf-8")
+    with pytest.raises(AblationError, match="checkpoint_corrupt"):
+        RunCache(path)
+
+
+def test_a_complete_last_row_without_its_newline_is_kept_and_terminated(tmp_path):
+    """ملاحظة Codex على #351: انقطاعٌ بعد إغلاق JSON وقبل السطر الجديد كان يُبقي الصفَّ بلا خاتمة، فيلتصق به الصفُّ التالي
+    ويفسد الملفّ فيُرفض الاستئنافُ بعده بـ`checkpoint_corrupt`."""
+    from evaluation.ablation import RunCache
+    path = tmp_path / "night.jsonl"
+    path.write_text(json.dumps({"key": "k0", "row": {"id": "c0", "status": "measured", "passed": True}}), encoding="utf-8")
+    cache = RunCache(path)
+    assert set(cache.rows) == {"k0"} and not cache.dropped_partial_tail
+    assert path.read_text(encoding="utf-8").endswith("\n")
+    cache.put("k1", {"id": "c1", "status": "measured", "passed": False})
+    assert set(RunCache(path).rows) == {"k0", "k1"}
+
+
+@pytest.mark.parametrize("content", [
+    pytest.param('{"foo": 1}', id="complete_json_of_another_shape"),
+    pytest.param("hello", id="text_that_is_not_a_checkpoint_row"),
+])
+def test_a_file_that_is_not_a_checkpoint_is_refused_and_left_untouched(tmp_path, content):
+    """ملاحظة Codex على #351: كان أيُّ آخرِ سطرٍ بلا خاتمة يُعدّ كتابةً منقطعة فيُقتطع، فملفٌّ سُمّي في `--checkpoint` خطأً
+    (`{"foo":1}` وحده) يصير صفرَ بايت. فالآن لا يُقتطع إلا ذيلٌ يبدأ كما يبدأ صفُّ المُشغِّل، وما سواه `checkpoint_corrupt`."""
+    from evaluation.ablation import RunCache
+    path = tmp_path / "other.json"
+    path.write_text(content, encoding="utf-8")
+    with pytest.raises(AblationError, match="checkpoint_corrupt"):
+        RunCache(path)
+    assert path.read_text(encoding="utf-8") == content and sorted(p.name for p in tmp_path.iterdir()) == ["other.json"]
+
+
+def test_a_research_component_refuses_a_checkpoint_and_never_quarantines_it(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex على #351: مُشغِّلُ البحث لا يفتح المخبأ، وكان انحرافُ البصمة في آخره ينقل ملفَّ `--checkpoint` إلى الحَجر
+    وإن لم يُقرأ ولم يُكتب. فالمخبأُ يُرفض لمُشغِّل البحث، ولا يُحجَر إلا ما فتحه التشغيلُ فعلًا."""
+    import sys
+    sys.path.insert(0, str(ROOT))
+    import providers.ollama as ollama
+    from tools import evaluate_ablation
+    from tools.model_digest import ModelDigestError
+    other = tmp_path / "another-component.jsonl"
+    other.write_text(json.dumps({"key": "k0", "row": {"id": "c0", "status": "measured"}}) + "\n", encoding="utf-8")
+    monkeypatch.setattr(ollama, "OllamaProvider", lambda model: Replay(lambda user, request: "الرباط"))
+    monkeypatch.setattr(evaluate_ablation, "pin_model_digest", lambda model, expected=None: "sha256:before")
+    argv = ["--component", "search", "--model", "fixture", "--bank-open", str(tmp_path / "open"),
+            "--checkpoint", str(other), "--out", str(tmp_path / "report.json")]
+    monkeypatch.setattr(evaluate_ablation, "verify_model_digest", lambda model, pinned: None)
+    assert evaluate_ablation.main(argv) == 2
+    assert json.loads(capsys.readouterr().out)["code"] == "checkpoint_unused_by_research_runner"
+
+    def drifted(model, pinned):
+        raise ModelDigestError("model_digest_drifted")
+
+    monkeypatch.setattr(evaluate_ablation, "verify_model_digest", drifted)
+    assert evaluate_ablation.main(argv) == 1
+    printed = json.loads(capsys.readouterr().out)
+    assert printed["code"] == "model_digest_drifted" and printed["checkpoint_quarantined"] is None
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["another-component.jsonl"]
+
+
+def test_a_symlinked_checkpoint_is_refused_before_it_is_read(tmp_path):
+    """ملاحظة Codex على #351: الحَجرُ لا يتبع الرابطَ والتحميلُ يتبعه، فرابطٌ في `--checkpoint` كان يُبقي صفوفَ بصمةٍ مرفوضة
+    في هدفه تُستأنف إن عاد الوسم. فالرابطُ يُرفض مسارًا للمخبأ، ولا يُقرأ هدفُه ولا يُكتب."""
+    from evaluation.ablation import RunCache
+    target = tmp_path / "real.jsonl"
+    row = json.dumps({"key": "k0", "row": {"id": "c0", "status": "measured", "passed": True}}) + "\n"
+    target.write_text(row, encoding="utf-8")
+    link = tmp_path / "night.jsonl"
+    link.symlink_to(target)
+    with pytest.raises(AblationError, match="checkpoint_symlink_refused"):
+        RunCache(link)
+    dangling = tmp_path / "dangling.jsonl"
+    dangling.symlink_to(tmp_path / "absent.jsonl")
+    with pytest.raises(AblationError, match="checkpoint_symlink_refused"):
+        RunCache(dangling)
+    assert target.read_text(encoding="utf-8") == row and not (tmp_path / "absent.jsonl").exists()
+
+
+def test_the_report_counts_only_the_checkpoint_rows_it_actually_reused(tmp_path):
+    """ملاحظة Codex الثالثة على #192: كان `measured_rows_reused` عددَ مفاتيح الملف قبل القياس، فتشغيلٌ ببصمة محرّكٍ أخرى يعيد
+    القياسَ كاملًا ويعلن استعادةَ الصفوف القديمة. يُعدّ الآن ما أُخذ من الملف فعلًا."""
+    import sys
+    sys.path.insert(0, str(ROOT))
+    from tools.evaluate_ablation import run_component
+    bank = tmp_path / "open" / "tier_a"
+    bank.mkdir(parents=True)
+    case = _case("c", "ما عاصمة المغرب؟", [{"kind": "contains", "value": "الرباط"}])
+    (bank / "s.json").write_text(json.dumps({"schema_version": 1, "suite_id": "s", "split": "development",
+                                             "description": "d", "cases": [case]}, ensure_ascii=False))
+    path = tmp_path / "night.jsonl"
+
+    def night(model_version):
+        seen = []
+        report = run_component("tool_announcement", Replay(lambda user, request: "الرباط", requests=seen),
+                               model="replay", model_version=model_version, bank_open=tmp_path / "open",
+                               checkpoint=path)
+        return report["config"]["checkpoint"], len(seen)
+
+    assert night("v1") == ({"path": str(path), "rows_in_file_at_start": 0, "measured_rows_reused": 0,
+                            "partial_tail_dropped": False}, 6)
+    assert night("v1") == ({"path": str(path), "rows_in_file_at_start": 6, "measured_rows_reused": 6,
+                            "partial_tail_dropped": False}, 0)
+    checkpoint, calls = night("v2")                                     # بصمةٌ أخرى: الملفُ مليء ولا شيءَ منه استُعمل
+    assert (checkpoint["rows_in_file_at_start"], checkpoint["measured_rows_reused"], calls) == (6, 0, 6)
+
+
+def test_a_drifted_digest_quarantines_the_checkpoint_so_its_rows_are_not_resumed(tmp_path, monkeypatch, capsys):
+    """ملاحظة Codex الأولى على #192: الصفوفُ تُكتب قبل إعادة التحقّق من البصمة؛ فإن انحرف الوسمُ أثناء الليلة رُفض التقريرُ وبقيت
+    صفوفٌ منسوبةٌ إلى البصمة الأولى تُستأنف بها إن عاد الوسم. فالملفُّ يُحجَر إلى اسمٍ لا يُقرأ منه، ويُعلَن ذلك."""
+    import sys
+    sys.path.insert(0, str(ROOT))
+    import providers.ollama as ollama
+    from tools import evaluate_ablation
+    from tools.model_digest import ModelDigestError
+    bank = tmp_path / "open" / "tier_a"
+    bank.mkdir(parents=True)
+    case = _case("c", "ما عاصمة المغرب؟", [{"kind": "contains", "value": "الرباط"}])
+    (bank / "s.json").write_text(json.dumps({"schema_version": 1, "suite_id": "s", "split": "development",
+                                             "description": "d", "cases": [case]}, ensure_ascii=False))
+    path, out = tmp_path / "var" / "night.jsonl", tmp_path / "report.json"
+    monkeypatch.setattr(ollama, "OllamaProvider", lambda model: Replay(lambda user, request: "الرباط"))
+    monkeypatch.setattr(evaluate_ablation, "pin_model_digest", lambda model, expected=None: "sha256:before")
+
+    def drifted(model, pinned):
+        raise ModelDigestError("model_digest_drifted")
+
+    monkeypatch.setattr(evaluate_ablation, "verify_model_digest", drifted)
+    argv = ["--component", "tool_announcement", "--model", "fixture", "--bank-open", str(tmp_path / "open"),
+            "--checkpoint", str(path), "--out", str(out)]
+    assert evaluate_ablation.main(argv) == 1 and not out.exists()
+    printed = json.loads(capsys.readouterr().out)
+    moved = sorted(path.parent.glob("night.jsonl.drift-quarantine-*"))
+    assert printed["code"] == "model_digest_drifted" and len(moved) == 1
+    assert printed["checkpoint_quarantined"] == str(moved[0]) and not path.exists()
+    assert len(moved[0].read_text(encoding="utf-8").splitlines()) == 6     # الصفوفُ المرفوضة محفوظةٌ حيث لا تُستأنف
+    monkeypatch.setattr(evaluate_ablation, "verify_model_digest", lambda model, pinned: None)
+    assert evaluate_ablation.main(argv) == 0                               # وعودةُ الوسم إلى بصمته تبدأ من الصفر
+    assert json.loads(out.read_text(encoding="utf-8"))["config"]["checkpoint"]["measured_rows_reused"] == 0
 
 
 def test_seed_count_cannot_collapse_to_one_or_tie():

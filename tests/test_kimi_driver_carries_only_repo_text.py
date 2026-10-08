@@ -244,7 +244,6 @@ def _run_backend(tmp_path, backend, **extra):
 
 @pytest.mark.parametrize("backend, model, url", [
     ("ollama", "kimi-k2.6:cloud", "http://localhost:11434/v1"),
-    ("hf", "moonshotai/Kimi-K2.6", "https://router.huggingface.co/v1"),
 ])
 def test_each_backend_passes_its_model_through_the_environment_only(tmp_path, backend, model, url):
     token = tmp_path / "token"
@@ -271,7 +270,26 @@ def test_an_unknown_backend_is_refused_before_anything_runs(tmp_path):
 
 def test_hf_without_a_token_file_stops(tmp_path):
     done, seen = _run_backend(tmp_path, "hf", HF_TOKEN_PATH=str(tmp_path / "missing"))
-    assert done.returncode != 0 and "لا توكن hf" in done.stderr and seen is None
+    assert done.returncode != 0 and "KIMI_BACKEND=hf مرفوض" in done.stderr and seen is None
+
+
+def test_hf_is_refused_until_its_spend_is_metered_even_with_a_token(tmp_path):
+    # ملاحظة Codex على #352: Kimi Code ينادي موجّهَ HF المدفوع من عمليته هو، فلا يحجز `Budget` ولا يقيّد سجلُّ `core.run`؛
+    # فيُرفض `hf` قبل أي تشغيلٍ ولو وُجد التوكن، حتى يُعدّ إنفاقُه (#366)
+    token = tmp_path / "token"
+    token.write_text("hf_fake_for_test\n")
+    done, seen = _run_backend(tmp_path, "hf", HF_TOKEN_PATH=str(token))
+    assert done.returncode != 0 and "KIMI_BACKEND=hf مرفوض" in done.stderr and "#366" in done.stderr
+    assert seen is None and "hf_fake_for_test" not in done.stdout + done.stderr
+
+
+@pytest.mark.parametrize("backend", ["kimi", "ollama"])
+def test_every_flat_rate_run_declares_it_is_outside_the_spend_ledger(tmp_path, backend):
+    """ملاحظة Codex على #352: المزوّدان المسموحان يُناديان من عملية Kimi Code لا من `core.run`، فلا تُعدّ توكناتُهما ولا تُقيَّد.
+    فيعلن كلُّ تشغيلٍ ذلك في سطر نهايته حتى يمرّ بوسيطٍ يحجز ويقيّد (#366)، ولا يبدو تشغيلًا محسوبًا."""
+    done, _ = _run_backend(tmp_path, backend)
+    assert done.returncode == 0, done.stderr
+    assert "الإنفاق: اشتراكٌ ثابت خارج core.run" in done.stdout and "#366" in done.stdout
 
 
 def test_the_intake_forwards_the_sandbox_receipt_so_its_report_can_witness_the_general_number(tmp_path):
