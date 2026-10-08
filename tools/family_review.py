@@ -21,7 +21,7 @@
 فيها هذه الأداة (`ROOT`)، و`--repo` يُقرأ منه تاريخُ git وحده. والمهمّةُ تشغّل الأداةَ من نسخة `main` وتعطيها نسخةَ الطلب
 `--repo`؛ فطلبٌ يُدرج بوتًا في `reviewers.json` أو يُخرج عميلَه من `agents.json` لا يغيّر حكمَه على نفسه.
 
-**الحكمُ النظيف لا مجرّدُ المراجعة (تقييم المرحلة ٢ من ق٧٦، ‎docs/probe/team-pilot-20261008.json):** دُمج #353 والفحصُ ناجح،
+**الحكمُ النظيف لا مجرّدُ المراجعة (تقييم المرحلة ٢ من ق٧٦، الطلب #371):** دُمج #353 والفحصُ ناجح،
 لأن الأداة احتسبت مراجعةَ Codex بحالة COMMENTED على الرأس، وفيها ملاحظاتٌ P1/P2، وكانت عشرةُ خيوطٍ مفتوحة. فصار يُشترط أمران:
 - مراجعةُ COMMENTED التي تحمل ملاحظاتٍ سطرية حكمُ «يحتاج تصحيحًا» يحجب كطلب التغييرات، ولا يُحتسب.
 - كلُّ خيطٍ غير محلول فتحه بوتٌ مدرَج من عائلةٍ أخرى يُسقط الفحص، ولو صار قديمًا (outdated). فالرأسُ النظيف وحده لا يكفي ما دامت ملاحظةٌ سابقة لم تُغلق.
@@ -218,9 +218,13 @@ def fetch_threads(repo_slug: str, pr: int, token: str | None) -> list[dict]:
                                                   **({"Authorization": f"Bearer {token}"} if token else {})})
         try:
             with urllib.request.urlopen(request, timeout=30) as response:  # noqa: S310 — واجهةُ GitHub المعلنة
-                data = json.loads(response.read().decode("utf-8"))
+                raw = response.read()
         except OSError as exc:
             raise ReviewError("threads_unreachable", type(exc).__name__) from exc
+        try:
+            data = json.loads(raw.decode("utf-8"))
+        except (UnicodeDecodeError, ValueError) as exc:
+            raise ReviewError("threads_malformed", type(exc).__name__) from exc
         if not isinstance(data, dict) or data.get("errors"):
             # GraphQL قد يعيد بياناتٍ جزئية مع أخطاء؛ والجزئيُّ قد يُسقط خيطًا مفتوحًا، فيُرفض كلُّه (ملاحظة Codex P1 على #372)
             raise ReviewError("threads_partial" if isinstance(data, dict) and data.get("data") else "threads_malformed")

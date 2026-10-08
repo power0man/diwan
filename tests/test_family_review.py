@@ -468,6 +468,8 @@ PARTIAL = json.dumps({"data": {"repository": {"pullRequest": {"reviewThreads": {
     pytest.param(OSError("down"), "threads_unreachable", id="unreachable"),
     pytest.param(b'{"data": {"repository": null}}', "threads_malformed", id="malformed"),
     pytest.param(PARTIAL, "threads_partial", id="partial"),
+    pytest.param(b"<html>bad gateway</html>", "threads_malformed", id="not-json"),
+    pytest.param(b"\xff\xfe", "threads_malformed", id="not-utf8"),
 ])
 def test_unreadable_threads_fail_closed(monkeypatch, failure, code):
     class Response:
