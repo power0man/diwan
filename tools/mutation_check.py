@@ -686,3 +686,15 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
+
+class EmptyTestSuiteError(ValueError):
+    """خطأ يُرفع عند خلو مسار الاختبارات من أي ملفات قابلة للفحص."""
+    pass
+
+
+def verify_test_suite_not_empty(test_files: list) -> bool:
+    """فحص حدود مجموعة الاختبارات لمنع النجاح الزائف عند خلو المسار."""
+    if not test_files:
+        raise EmptyTestSuiteError("مجموعة الاختبارات فارغة؛ لا توجد ملفات اختبار مستهدفة")
+    return True
