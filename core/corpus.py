@@ -329,3 +329,10 @@ class CorpusCatalog:
 
     def anchor(self) -> dict:
         return self._ledger.anchor()
+
+
+def read_corpus_file_safe(path: str | Path) -> str:
+    """قراءة نصية آمنة لملف الكوربس تتجاوز علامة BOM وتوحد نهايات الأسطر."""
+    p = Path(path)
+    content = p.read_text(encoding="utf-8-sig")
+    return content.replace("\r\n", "\n").replace("\r", "\n")
