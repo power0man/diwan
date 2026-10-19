@@ -154,3 +154,19 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+
+def strip_arabic_proclitics(word: str) -> str:
+    """تجريد حروف العطف والجر والتعريف المتصلة (ال، و، ف، ب) للألفاظ فوق 4 أحرف."""
+    if not word or len(word) <= 4:
+        return word
+    w = word
+    # تجريد حرف العطف أو الجر الاستهلالي أولاً
+    for p in ("و", "ف", "ب", "ل", "ك"):
+        if w.startswith(p) and len(w) > 4:
+            w = w[1:]
+            break
+    # تجريد أداة التعريف "ال" إن وجدت بعد ذلك
+    if w.startswith("ال") and len(w) > 4:
+        w = w[2:]
+    return w
