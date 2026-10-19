@@ -332,10 +332,16 @@ class CorpusCatalog:
 
 
 def read_corpus_file_safe(path: str | Path) -> str:
-    """قراءة نصية آمنة لملف الكوربس تتجاوز علامة BOM وتوحد كافة نهايات الأسطر (CRLF و CR إلى LF)."""
+    """قراءة نصية آمنة لملف الكوربس تتجاوز علامة BOM وتوحد كافة نهايات الأسطر (CRLF و CR إلى LF).
+    
+    يرفع FileNotFoundError إذا لم يكن الملف موجوداً، و ValueError إذا كان الترميز غير صالح.
+    """
     from pathlib import Path
     p = Path(path)
     if not p.is_file():
         raise FileNotFoundError(f"ملف الكوربس غير موجود: {p}")
-    content = p.read_text(encoding="utf-8-sig")
+    try:
+        content = p.read_text(encoding="utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise ValueError(f"ملف الكوربس ليس بترميز UTF-8 صالح: {p}") from exc
     return content.replace("\r\n", "\n").replace("\r", "\n")

@@ -37,3 +37,9 @@ def test_read_corpus_file_safe_nonexistent_file(tmp_path):
     f = tmp_path / "missing.txt"
     with pytest.raises(FileNotFoundError):
         read_corpus_file_safe(f)
+
+def test_read_corpus_file_safe_invalid_utf8(tmp_path):
+    f = tmp_path / "invalid_utf8.bin"
+    f.write_bytes(b"\xff\xfe\x00\x00invalid")
+    with pytest.raises((ValueError, UnicodeDecodeError)):
+        read_corpus_file_safe(f)
