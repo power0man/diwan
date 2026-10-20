@@ -102,6 +102,57 @@ def test_validate_promotes_a_waiting_review_and_accept_binds_the_heads(tmp_path)
     assert dispatcher.accept(41)["status"] == "accepted"
 
 
+def test_validate_excuses_absent_family_review_with_valid_native_review(tmp_path):
+    dispatcher, project, _adapter, ledger, _repo = _setup(tmp_path)
+    out = dispatcher.run(41, execute=True)
+    head = out["head_sha"]
+    ledger.append(41, "reviewed_awaiting_validation", head_sha=head, review_ref="c-1",
+                  reviewer="codex", reviewer_family="openai", verdict="pass", calibrated=True)
+    project.checks_by_head[head] = "family_review_failure"
+    pull = project.pulls[out["pr"]]
+    project.pulls[out["pr"]] = PullRequest(pull.number, head, "main", pull.branch, 41, commit_messages=("Diwan-Agent: anthropic/claude-3-5-sonnet\n",))
+    res = dispatcher.validate(41)
+    assert res["status"] == "validated"
+    assert ledger.main_state(41)["state"] == "verified"
+    assert project.last_checks_args["native_review"]["verdict"] == "pass"
+    assert project.last_checks_args["author_families"] == {"anthropic"}
+
+
+def test_validate_refuses_when_completed_record_corrupt_or_missing_pr(tmp_path, monkeypatch):
+    dispatcher1, _project1, _adapter1, ledger1, _repo1 = _setup(tmp_path / "c1")
+    out1 = dispatcher1.run(41, execute=True)
+    head1 = out1["head_sha"]
+    ledger1.append(41, "completed", head_sha=head1, branch="team/41", pr=1)
+    orig_last_of = ledger1.last_of
+    monkeypatch.setattr(ledger1, "last_of", lambda issue, st, att=None: None if st == "completed" else orig_last_of(issue, st, att))
+    with pytest.raises(Refusal) as exc1:
+        dispatcher1.validate(41)
+    assert exc1.value.code == "nothing_to_validate"
+
+    dispatcher2, _project2, _adapter2, ledger2, _repo2 = _setup(tmp_path / "c2")
+    out = dispatcher2.run(41, execute=True)
+    head = out["head_sha"]
+    ledger2.append(41, "completed", head_sha=head, branch="team/41")
+    with pytest.raises(Refusal) as exc2:
+        dispatcher2.validate(41)
+    assert exc2.value.code == "nothing_to_validate"
+
+
+def test_validate_fails_closed_when_author_families_empty(tmp_path):
+    dispatcher, project, _adapter, ledger, _repo = _setup(tmp_path)
+    out = dispatcher.run(41, execute=True)
+    head = out["head_sha"]
+    ledger.append(41, "reviewed_awaiting_validation", head_sha=head, review_ref="c-1",
+                  reviewer="codex", reviewer_family="openai", verdict="pass", calibrated=True)
+    project.checks_by_head[head] = "family_review_failure"
+
+    # pull has empty author families -> checks returns failure
+    project.pulls[out["pr"]] = PullRequest(out["pr"], head, "main", "team/41", 41, commit_messages=("no trailers\n",))
+    res = dispatcher.validate(41)
+    assert res["status"] == "validation_failed"
+    assert project.last_checks_args["author_families"] == set()
+
+
 def test_takeover_needs_an_expired_lease_proof_of_absence_and_the_owner_s_word(tmp_path):
     dispatcher, _project, _adapter, ledger, _repo = _setup(tmp_path, behaviour="killed")
     dispatcher.run(41, execute=True)

@@ -213,14 +213,64 @@ class DiwanProject(ProjectAdapter):
         data = self._json("api", f"repos/{self.repo}/issues/{number}/comments", "-f", f"body={body}")
         return str((data or {}).get("html_url") or (data or {}).get("id") or "")
 
-    def checks(self, head_sha: str) -> str:
+    def is_valid_native_review(self, head_sha: str, review: dict | None, *, author_families: set[str] | None = None) -> bool:
+        """تحقق ق٧٥(ب) الأصلي: مراجعة مستقلة صامدة لرأس هذا الإيداع بعينه، من عائلة مؤهلة، ومعايرة سليمة."""
+        if not isinstance(review, dict):
+            return False
+        if not author_families:
+            return False
+        if review.get("head_sha") != head_sha:
+            return False
+        if review.get("verdict") != "pass":
+            return False
+        reviewer = review.get("reviewer")
+        reviewer_family = review.get("reviewer_family")
+        if not reviewer or not reviewer_family or ADAPTER_FAMILY.get(reviewer) != reviewer_family:
+            return False
+        if reviewer_family in author_families or any(reviewer not in REVIEWERS_Q75.get(family, ()) for family in author_families):
+            return False
+        if review.get("calibrated") is not True:
+            return False
+        if not review.get("review_ref"):
+            return False
+        return True
+
+    def checks(self, head_sha: str, *, native_review: dict | None = None, author_families: set[str] | None = None, pull: PullRequest | None = None) -> str:
         data = self._json("api", f"repos/{self.repo}/commits/{head_sha}/check-runs") or {}
         runs = data.get("check_runs") or []
         if not runs:
             return "none"
-        conclusions = [run.get("conclusion") for run in runs]
-        if any(c in ("failure", "cancelled", "timed_out", "action_required") for c in conclusions):
-            return "failure"
+        failing_runs = [run for run in runs if run.get("conclusion") in ("failure", "cancelled", "timed_out", "action_required")]
+        if failing_runs:
+            if any(str(run.get("name") or "") != "family-review" for run in failing_runs):
+                return "failure"
+            for run in failing_runs:
+                if run.get("conclusion") != "failure":
+                    return "failure"
+                output = run.get("output") or {}
+                text = f"{output.get('title') or ''} {output.get('summary') or ''} {output.get('text') or ''}".casefold()
+                if "no_review_from_another_family" not in text:
+                    return "failure"
+            if not pull:
+                return "failure"
+            try:
+                pr_reviews_pages = self._json("api", "--paginate", "--slurp", f"repos/{self.repo}/pulls/{pull.number}/reviews")
+                if not isinstance(pr_reviews_pages, list):
+                    return "failure"
+                pr_reviews = []
+                for page in pr_reviews_pages:
+                    if not isinstance(page, list):
+                        return "failure"
+                    for r in page:
+                        if not isinstance(r, dict):
+                            return "failure"
+                        pr_reviews.append(r)
+                if any(r.get("state") == "CHANGES_REQUESTED" for r in pr_reviews):
+                    return "failure"
+            except GhError:
+                return "failure"
+            if not self.is_valid_native_review(head_sha, native_review, author_families=author_families):
+                return "failure"
         by_name = {str(run.get("name") or ""): run for run in runs}
         required_ok = all(by_name.get(name, {}).get("status") == "completed" and by_name.get(name, {}).get("conclusion") == "success"
                           for name in REQUIRED_CHECKS)

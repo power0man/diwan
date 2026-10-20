@@ -315,6 +315,8 @@ class Dispatcher:
         if self.ledger.open_attempt(issue_number) is None:
             raise Refusal("nothing_to_validate", "المحاولةُ مستحوَذٌ عليها")
         completed = self.ledger.last_of(issue_number, "completed", state["attempt"])
+        if not completed or not completed.get("pr"):
+            raise Refusal("nothing_to_validate", "قيدُ completed أو رقمُ الطلب غائب")
         pull = self.project.pull(int(completed["pr"]))
         if pull.head_sha and pull.head_sha != completed["head_sha"]:
             self.ledger.append(issue_number, "completed", head_sha=pull.head_sha, branch=completed["branch"], pr=pull.number,
@@ -331,10 +333,16 @@ class Dispatcher:
 
     def validate(self, issue_number: int) -> dict:
         head = self.sync_head(issue_number)
-        status = self.project.checks(head)
+        native_review = self.latest_review(issue_number, head)
+        state_entry = self.ledger.main_state(issue_number)
+        attempt = state_entry["attempt"] if state_entry else None
+        completed = self.ledger.last_of(issue_number, "completed", attempt)
+        pull = self.project.pull(int(completed["pr"]))
+        author_fams = self.project.author_families(pull)
+        status = self.project.checks(head, native_review=native_review, author_families=author_fams, pull=pull)
         if status == "success":
-            state = self.ledger.main_state(issue_number)["state"]
-            if state == "completed":
+            current_state = self.ledger.main_state(issue_number)["state"]
+            if current_state == "completed":
                 self.ledger.append(issue_number, "validated", head_sha=head, checks_ref=f"checks:{head}")
             # مراجعةٌ ناجحة سبقت الفحوصَ أو تزامنت معها (قُيّدت بعد validated) تُرقّى هنا لا بمراجعةٍ ثانية مدفوعة
             if self.ledger.main_state(issue_number)["state"] == "validated":
