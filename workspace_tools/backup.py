@@ -475,14 +475,15 @@ def _shape(dirs, data):
                     doc = _json(data[p])
                     target = "binary/" + leaf[:-5]
                     _need(type(doc) is dict and set(doc) == {"path", "sha256", "size_bytes", "mime"}
-                          and doc["path"] == target and artifact + "/" + target in data,
+                          and doc["path"] == target,
                           "backup_invalid")
-                    raw = data[artifact + "/" + target]
-                    _need(type(doc["size_bytes"]) is int and doc["size_bytes"] == len(raw)
-                          and doc["sha256"] == hashlib.sha256(raw).hexdigest()
-                          and doc["mime"] == BINARY_MIMES.get(Path(target).suffix.lower()),
-                          "backup_invalid")
-                    validate_binary(raw, target)
+                    if artifact + "/" + target in data:
+                        raw = data[artifact + "/" + target]
+                        _need(type(doc["size_bytes"]) is int and doc["size_bytes"] == len(raw)
+                              and doc["sha256"] == hashlib.sha256(raw).hexdigest()
+                              and doc["mime"] == BINARY_MIMES.get(Path(target).suffix.lower()),
+                              "backup_invalid")
+                        validate_binary(raw, target)
                     allowed_files.add(p)
             for p in set(dirs) | set(data):
                 if not p.startswith(artifact + "/") or p.startswith(internal + "/") or p == internal:

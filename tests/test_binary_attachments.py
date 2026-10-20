@@ -341,3 +341,56 @@ def test_binary_copy_reports_filesystem_failure_by_name(app, monkeypatch):
     with pytest.raises(WorkspaceError) as exc:
         agent_workspace.materialize_selected(workspace, [('inputs/full.pdf', b'%PDF-1.4')])
     assert exc.value.code == 'filesystem_error'
+
+
+def test_binary_uploads_resilient_to_journal_refusal_and_missing_files(app, monkeypatch):
+    from agent.journal import JournalRefused
+    status1, doc1 = upload(app, 'valid.pdf', pdf_bytes(1024))
+    assert status1 == 200
+    status2, doc2 = upload(app, 'large.pdf', pdf_bytes(2048))
+    assert status2 == 200
+
+    uploads = app.project(app.test_project) / 'uploads'
+
+    orig_read_file = agent_workspace.read_file
+    def fake_read_file(root, path, **kwargs):
+        if path == doc2['path']:
+            raise JournalRefused('file_too_large', 'محاكاة كبر الحجم فوق السقف')
+        return orig_read_file(root, path, **kwargs)
+    monkeypatch.setattr(agent_workspace, 'read_file', fake_read_file)
+
+    (uploads / doc1['path']).unlink()
+
+    status3, doc3 = upload(app, 'healthy.pdf', pdf_bytes(512))
+    assert status3 == 200
+
+    res = agent_workspace.binary_uploads(uploads)
+    assert any(f['path'] == doc3['path'] for f in res['files'])
+    unavail = {u['path']: u['error_code'] for u in res['unavailable']}
+    assert doc1['path'] in unavail
+    assert unavail[doc1['path']] in ('agent_file_missing', 'attachment_missing', 'agent_input_changed')
+    assert doc2['path'] in unavail
+    assert unavail[doc2['path']] == 'file_too_large'
+
+
+def test_binary_backup_succeeds_even_when_binary_file_is_missing(app, tmp_path):
+    from workspace_tools import backup
+    status, doc = upload(app, 'page.pdf', pdf_bytes(2048))
+    assert status == 200
+
+    target_file = app.project(app.test_project) / 'uploads' / doc['path']
+    target_file.unlink()
+    assert not target_file.exists()
+
+    receipts_dir = app.project(app.test_project) / 'uploads/.binary-uploads'
+    assert any(receipts_dir.iterdir())
+
+    app.close()
+    app.test_closed = True
+
+    archive = tmp_path.resolve() / 'resilient-backup.json'
+    result = backup.export_workspace(app.root, archive)
+    assert archive.exists()
+    assert backup.inspect_archive(archive, result['sha256'])['status'] == 'verified'
+    restored = tmp_path / 'restored'
+    assert backup.restore_workspace(archive, restored, result['sha256'])['status'] == 'restored'

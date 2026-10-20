@@ -93,7 +93,10 @@ def binary_uploads(root):
     try:
         if ".binary-uploads" not in os.listdir(fd):
             return {"files": files, "unavailable": unavailable}
-        state = _directory(fd, ".binary-uploads")
+        try:
+            state = _directory(fd, ".binary-uploads")
+        except FileNotFoundError:
+            return {"files": files, "unavailable": unavailable}
         try:
             for receipt in sorted(os.listdir(state)):
                 try:
@@ -104,11 +107,14 @@ def binary_uploads(root):
                         _fail("agent_input_changed")
                     validate_binary(raw, doc["path"])
                     files.append(doc)
-                except (WorkspaceError, ValueError, KeyError, TypeError) as exc:
+                except (WorkspaceError, ValueError, KeyError, TypeError, RuntimeError, FileNotFoundError) as exc:
+                    code = getattr(exc, "code", None) or (
+                        "attachment_missing" if isinstance(exc, FileNotFoundError)
+                        else "attachment_receipt_invalid"
+                    )
                     unavailable.append({"path": "binary/" + receipt.removesuffix(".json"),
                                         "status": "unavailable",
-                                        "error_code": exc.code if isinstance(exc, WorkspaceError)
-                                        else "attachment_receipt_invalid"})
+                                        "error_code": code})
         finally:
             os.close(state)
     finally:
