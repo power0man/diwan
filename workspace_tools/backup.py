@@ -204,10 +204,11 @@ def _inventory(root_fd):
         _need(len(result) <= MAX_ENTRIES, "backup_limit")
         for name in sorted(os.listdir(fd)):
             child_path = name if not path else path + "/" + name
-            if name.startswith("write-") and name.endswith(".tmp") and path.endswith("/.binary-uploads"):
-                continue
             _relative_path(child_path)
             item = os.stat(name, dir_fd=fd, follow_symlinks=False)
+            if (stat.S_ISREG(item.st_mode) and name.startswith("write-") and name.endswith(".tmp")
+                    and path.count("/") == 3 and path.startswith("projects/") and path.endswith("/uploads/.binary-uploads")):
+                continue
             if stat.S_ISDIR(item.st_mode):
                 child = os.open(name, _DIR, dir_fd=fd)
                 try:
@@ -465,28 +466,29 @@ def _shape(dirs, data):
                 allowed_files.update(internal_files)
                 stores.append(artifact)
             receipts = artifact + "/.binary-uploads"
-            if category == "uploads" and receipts in dirs:
-                allowed_dirs.add(receipts)
-                from services.agent_workspace import validate_binary, validate_receipt_shape
-                for p in data:
-                    if not p.startswith(receipts + "/"):
-                        continue
-                    leaf = p[len(receipts) + 1:]
-                    if leaf.startswith("write-") and leaf.endswith(".tmp"):
+            if category == "uploads":
+                has_receipts_entries = any(p.startswith(receipts + "/") for p in set(dirs) | set(data))
+                if receipts in dirs or has_receipts_entries:
+                    _need(receipts in dirs, "backup_tree_invalid")
+                    allowed_dirs.add(receipts)
+                    from services.agent_workspace import validate_binary, validate_receipt_shape
+                    for p in data:
+                        if not p.startswith(receipts + "/"):
+                            continue
+                        leaf = p[len(receipts) + 1:]
+                        _need(not (leaf.startswith("write-") and leaf.endswith(".tmp")), "backup_tree_invalid")
+                        _need("/" not in leaf and leaf.endswith(".json") and _ordinary(leaf),
+                              "backup_tree_invalid")
+                        doc = _json(data[p])
+                        target = "binary/" + leaf[:-5]
+                        _need(validate_receipt_shape(doc, target), "backup_invalid")
+                        if artifact + "/" + target in data:
+                            raw = data[artifact + "/" + target]
+                            _need(type(doc["size_bytes"]) is int and doc["size_bytes"] == len(raw)
+                                  and doc["sha256"] == hashlib.sha256(raw).hexdigest(),
+                                  "backup_invalid")
+                            validate_binary(raw, target)
                         allowed_files.add(p)
-                        continue
-                    _need("/" not in leaf and leaf.endswith(".json") and _ordinary(leaf),
-                          "backup_tree_invalid")
-                    doc = _json(data[p])
-                    target = "binary/" + leaf[:-5]
-                    _need(validate_receipt_shape(doc, target), "backup_invalid")
-                    if artifact + "/" + target in data:
-                        raw = data[artifact + "/" + target]
-                        _need(type(doc["size_bytes"]) is int and doc["size_bytes"] == len(raw)
-                              and doc["sha256"] == hashlib.sha256(raw).hexdigest(),
-                              "backup_invalid")
-                        validate_binary(raw, target)
-                    allowed_files.add(p)
             for p in set(dirs) | set(data):
                 if not p.startswith(artifact + "/") or p.startswith(internal + "/") or p == internal:
                     continue

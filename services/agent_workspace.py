@@ -148,7 +148,7 @@ def binary_uploads(root):
                         _fail("agent_input_changed")
                     validate_binary(raw, doc["path"])
                     files.append(doc)
-                except (WorkspaceError, ValueError, KeyError, TypeError, JournalRefused, OSError) as exc:
+                except Exception as exc:
                     if isinstance(exc, (WorkspaceError, JournalRefused)):
                         code = exc.code
                     elif isinstance(exc, FileNotFoundError):

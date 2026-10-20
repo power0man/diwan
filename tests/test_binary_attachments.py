@@ -569,3 +569,60 @@ def test_binary_backup_refuses_corrupt_receipt_even_when_binary_file_is_missing(
             backup.export_workspace(app.root, archive)
         assert exc.value.code == 'backup_invalid'
         assert not archive.exists()
+
+
+def test_binary_backup_refuses_archive_with_tmp_file_or_missing_dir(app, tmp_path):
+    from workspace_tools import backup
+    status, doc = upload(app, 'valid.pdf', pdf_bytes(1024))
+    assert status == 200
+
+    app.close()
+    app.test_closed = True
+
+    archive = tmp_path / 'normal-backup.json'
+    result = backup.export_workspace(app.root, archive)
+
+    # 1. Archive with write-*.tmp file inside .binary-uploads is refused with backup_tree_invalid
+    bad_archive_tmp = tmp_path / 'bad-tmp.json'
+    mutated_bundle = json.loads(archive.read_text('utf-8'))
+    uploads_dir = f'projects/{app.test_project}/uploads'
+    receipts_dir = f'{uploads_dir}/.binary-uploads'
+    mutated_bundle['files'].append({
+        'path': f'{receipts_dir}/write-evil.tmp',
+        'identity': {'device': '1', 'inode': '1'},
+        'size_bytes': len(b'leftover'),
+        'sha256': hashlib.sha256(b'leftover').hexdigest(),
+        'data_base64': base64.b64encode(b'leftover').decode('ascii'),
+    })
+    mutated_bundle['files'].sort(key=lambda item: item['path'])
+    raw_bad = backup.canonical_bytes(mutated_bundle)
+    bad_archive_tmp.write_bytes(raw_bad)
+    bad_archive_tmp.chmod(0o600)
+    restored_tmp = tmp_path / 'restored-tmp'
+    with pytest.raises(backup.BackupError) as exc:
+        backup.restore_workspace(bad_archive_tmp, restored_tmp, hashlib.sha256(raw_bad).hexdigest())
+    assert exc.value.code == 'backup_tree_invalid'
+
+    # 2. Archive with .binary-uploads file but receipts directory omitted from dirs
+    dirs, data, _, _, _ = backup._validate_bundle(json.loads(archive.read_text('utf-8')))
+    dirs_without_receipts = {d for d in dirs if d != receipts_dir}
+    with pytest.raises(backup.BackupError) as exc:
+        backup._shape(dirs_without_receipts, data)
+    assert exc.value.code == 'backup_tree_invalid'
+
+
+def test_binary_uploads_handles_unexpected_exception(app, monkeypatch):
+    import zlib
+    status, doc = upload(app, 'valid.pdf', pdf_bytes(1024))
+    assert status == 200
+    uploads = app.project(app.test_project) / 'uploads'
+
+    def fake_validate_binary(raw, path):
+        raise zlib.error('simulated decompression crash')
+    monkeypatch.setattr(agent_workspace, 'validate_binary', fake_validate_binary)
+    res = agent_workspace.binary_uploads(uploads)
+    assert res['files'] == []
+    assert res['unavailable'] == [{'path': doc['path'],
+                                  'status': 'unavailable',
+                                  'error_code': 'attachment_receipt_invalid'}]
+
