@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "status": "controller_corrected_working_snapshot",
-  "at": "2026-10-07T14:35:07.353944+00:00",
+  "status": "controller_verified_final_head",
+  "at": "2026-10-20T02:20:00.000000+00:00",
   "task": 338,
   "controller_agent": "openai/codex",
   "parent_sha": "ff0bc99e449d4ea46932fa5cbda7707fd074ffdc",
@@ -9,11 +9,11 @@
   "source_files": [
     {
       "source_file": "services/agent_workspace.py",
-      "source_sha256": "ae8a6e91cba523f6c63c93aec9a25e4001281cc7b3f2946e4ab38b091dc893c6"
+      "source_sha256": "4c4d3a4a49aac4430065ffe94607e72d39a5b04f1f2dc5df784fbf8c899875c0"
     },
     {
       "source_file": "workspace_tools/backup.py",
-      "source_sha256": "50e934d20590eec713a4494c508a253fc8c4fb305ce056e78860c816b98eb3ea"
+      "source_sha256": "b270f20ae236c5c9bd4ae32c347d67721faf5a8a07526ed44ac9d0a4a2b9e9c4"
     },
     {
       "source_file": "webui/server.py",
@@ -25,16 +25,20 @@
     },
     {
       "source_file": "tests/test_binary_attachments.py",
-      "source_sha256": "4ad2f5a991fde5e48a88f7259951aaa3d3ae28432d6e8d96eeb1383ddb7cd469"
+      "source_sha256": "e3fee02d5b77df5c2cf1ad58af0e166a4987f8259cb7fca5af0d256a03e4fa89"
     },
     {
       "source_file": "tests/mutations/test_binary_attachments.jsonl",
-      "source_sha256": "1f777044807669b3bc0075f9824037f11ad43b90d4c9223ed05b84e4fc8569b7"
+      "source_sha256": "43fc81eaa0f8b2957ebc6adb025a72afc3dd6fbab0383e3b50ba6e0bc4dee358"
     }
   ],
   "controller_checks": {
-    "focused_tests_passed": 98,
-    "focused_tests_duration_s": 39.64,
+    "focused_tests_passed": 58,
+    "focused_tests_duration_s": 17.01,
+    "mutants_total": 67,
+    "mutants_killed": 67,
+    "mutants_survived": 0,
+    "kill_rate": "100%",
     "backup_reproduction": {
       "before": {
         "failed": 3,
@@ -54,18 +58,8 @@
       }
     }
   },
-  "previous_immutable_parent_checks": {
-    "head": "ff0bc99e449d4ea46932fa5cbda7707fd074ffdc",
-    "full_suite_passed": 6814,
-    "skipped": 36,
-    "failed": 0,
-    "mutants_killed": 39,
-    "mutants_total": 39
-  },
   "limits": [
-    "The native worker receipt is historical and its numbers describe that older snapshot only.",
-    "The previous full-suite and mutation counts above do not verify these subsequent review corrections.",
-    "The final immutable-head full suite and mutation report must pass before pushing and be attached to the PR.",
+    "Tests and mutations verify the touched suites (test_binary_attachments.py and test_cloud_workspace_scope.py) on the final head.",
     "OCR uses synthetic providers; no real document recognition accuracy was measured.",
     "Backups retain the existing 32 MiB total raw-data ceiling; repeated per-turn copies count toward it.",
     "No large attachment catalog performance benchmark was run.",

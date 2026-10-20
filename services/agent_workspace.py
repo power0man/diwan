@@ -35,11 +35,12 @@ _SHA = re.compile(r"^[0-9a-f]{64}$")
 
 def validate_receipt_shape(doc, target):
     """Ensure upload receipt shape is strictly valid before admitting it."""
+    suffix = Path(target).suffix.lower()
     return (type(doc) is dict and set(doc) == {"path", "sha256", "size_bytes", "mime"}
             and doc["path"] == target
             and type(doc["size_bytes"]) is int and doc["size_bytes"] >= 0
             and type(doc["sha256"]) is str and bool(_SHA.fullmatch(doc["sha256"]))
-            and doc["mime"] == BINARY_MIMES.get(Path(target).suffix.lower()))
+            and suffix in BINARY_MIMES and doc["mime"] == BINARY_MIMES[suffix])
 
 
 def attachment_limit(name):

@@ -656,3 +656,16 @@ def test_binary_backup_refuses_malformed_binary_content_with_backup_invalid():
     assert exc.value.code == 'backup_invalid'
 
 
+def test_validate_receipt_shape_refuses_disallowed_extension_or_null_mime():
+    from services.agent_workspace import validate_receipt_shape
+    doc = {
+        'path': 'binary/evil.gif',
+        'mime': None,
+        'size_bytes': 0,
+        'sha256': '0' * 64,
+    }
+    assert not validate_receipt_shape(doc, 'binary/evil.gif')
+    assert not validate_receipt_shape(doc, 'binary/evil.pdf')
+
+
+

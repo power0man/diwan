@@ -81,8 +81,10 @@ def _fail(code, reason="تعذر التحقق من النسخة المحلية")
     raise BackupError(code, reason)
 
 
-def _need(condition, code="backup_invalid"):
+def _need(condition, code="backup_invalid", reason=None):
     if not condition:
+        if reason is not None:
+            _fail(code, reason)
         _fail(code)
 
 
@@ -485,11 +487,11 @@ def _shape(dirs, data):
                             raw = data[artifact + "/" + target]
                             _need(type(doc["size_bytes"]) is int and doc["size_bytes"] == len(raw)
                                   and doc["sha256"] == hashlib.sha256(raw).hexdigest(),
-                                  "backup_invalid")
+                                  "backup_invalid", f"مرفق ثنائي متغيّر أو غير مطابق: {target}")
                             try:
                                 validate_binary(raw, target)
                             except Exception:
-                                _fail("backup_invalid")
+                                _fail("backup_invalid", f"محتوى مرفق ثنائي تالف: {target}")
                         allowed_files.add(p)
             for p in set(dirs) | set(data):
                 if not p.startswith(artifact + "/") or p.startswith(internal + "/") or p == internal:
