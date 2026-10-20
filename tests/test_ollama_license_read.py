@@ -445,3 +445,23 @@ def test_the_evidence_names_the_registered_agent_that_ran_the_reading(tmp_path, 
     assert "agent_not_registered" in capsys.readouterr().err
     with pytest.raises(SystemExit):
         olr.main(rest)
+
+
+def test_whitespace_only_license_text_is_recorded_and_accepted():
+    # فحص أن النص المكون من فراغات فقط يحمل whitespace_only والنص المنعدم لا يحمله، وقبول الحارس
+    runner = _runner({"broken:1b": (0, b"\n", b""), "odd:1b": (0, b"", b"")})
+    evidence = olr.probe(["broken:1b", "odd:1b"], "2026-10-20", runner=runner, agent=RUNNER)
+    assert evidence["models"] == {}
+    by_tag = {r["tag"]: r for r in evidence["unresolved_readings"]}
+    assert by_tag["broken:1b"]["pending"] == olr.EMPTY
+    assert by_tag["broken:1b"]["whitespace_only"] is True
+    assert by_tag["broken:1b"]["license_text_bytes"] == 1
+    assert by_tag["odd:1b"]["pending"] == olr.EMPTY
+    assert "whitespace_only" not in by_tag["odd:1b"]
+    assert by_tag["odd:1b"]["license_text_bytes"] == 0
+    assert probe_evidence.validate_payload(evidence, current_name="x.json") == []
+    registry = _registry(**{"broken:1b": {"pending": "old"}, "odd:1b": {"pending": "old"}})
+    applied = olr.apply(json.loads(json.dumps(registry)), evidence)
+    assert ml.findings(applied, {"x.json": evidence}, None) == []
+
+
