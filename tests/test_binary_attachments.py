@@ -434,17 +434,44 @@ def test_binary_uploads_resilient_to_journal_refusal_and_missing_files(app, monk
         'unavailable': [{'path': 'binary', 'status': 'unavailable', 'error_code': 'filesystem_error'}]
     }
 
-    # Verify os.listdir failures on root or state directory report filesystem_error
+    # 1. Verify _open_directory failure on root reports unsafe_path on ELOOP
     orig_open_dir = agent_workspace._open_directory
     orig_listdir = agent_workspace.os.listdir
     monkeypatch.setattr(agent_workspace, '_directory', orig_directory)
-    def open_then_fail_listdir(path, **kwargs):
+
+    def fake_open_dir_eloop(path, **kwargs):
+        raise OSError(errno.ELOOP, 'synthetic root symlink loop')
+    monkeypatch.setattr(agent_workspace, '_open_directory', fake_open_dir_eloop)
+    assert agent_workspace.binary_uploads(uploads) == {
+        'files': [],
+        'unavailable': [{'path': 'binary', 'status': 'unavailable', 'error_code': 'unsafe_path'}]
+    }
+
+    # 2. Verify os.listdir failure on root fd reports filesystem_error
+    def open_then_fail_first_listdir(path, **kwargs):
         real_fd = orig_open_dir(path, **kwargs)
-        def fail_now(fd):
-            raise OSError(errno.EIO, 'synthetic I/O error on listdir')
-        monkeypatch.setattr(agent_workspace.os, 'listdir', fail_now)
+        def fail_first(fd):
+            raise OSError(errno.EIO, 'synthetic I/O error on uploads root listdir')
+        monkeypatch.setattr(agent_workspace.os, 'listdir', fail_first)
         return real_fd
-    monkeypatch.setattr(agent_workspace, '_open_directory', open_then_fail_listdir)
+    monkeypatch.setattr(agent_workspace, '_open_directory', open_then_fail_first_listdir)
+    assert agent_workspace.binary_uploads(uploads) == {
+        'files': [],
+        'unavailable': [{'path': 'binary', 'status': 'unavailable', 'error_code': 'filesystem_error'}]
+    }
+
+    # 3. Verify os.listdir failure on state fd (.binary-uploads) reports filesystem_error
+    def open_then_fail_second_listdir(path, **kwargs):
+        real_fd = orig_open_dir(path, **kwargs)
+        call_num = [0]
+        def fail_second(fd):
+            call_num[0] += 1
+            if call_num[0] > 1:
+                raise OSError(errno.EIO, 'synthetic I/O error on receipts state listdir')
+            return orig_listdir(fd)
+        monkeypatch.setattr(agent_workspace.os, 'listdir', fail_second)
+        return real_fd
+    monkeypatch.setattr(agent_workspace, '_open_directory', open_then_fail_second_listdir)
     assert agent_workspace.binary_uploads(uploads) == {
         'files': [],
         'unavailable': [{'path': 'binary', 'status': 'unavailable', 'error_code': 'filesystem_error'}]
@@ -494,6 +521,7 @@ def test_binary_backup_succeeds_even_when_binary_file_is_missing(app, tmp_path):
     uploads_restored = restored / 'projects' / app.test_project / 'uploads'
     receipt_leaf = Path(doc['path']).name + '.json'
     assert (uploads_restored / '.binary-uploads' / receipt_leaf).exists()
+    assert not (uploads_restored / '.binary-uploads' / 'write-leftover.tmp').exists()
     assert not (uploads_restored / doc['path']).exists()
     restored_status = agent_workspace.binary_uploads(uploads_restored)
     assert restored_status['files'] == []

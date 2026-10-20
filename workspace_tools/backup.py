@@ -204,6 +204,8 @@ def _inventory(root_fd):
         _need(len(result) <= MAX_ENTRIES, "backup_limit")
         for name in sorted(os.listdir(fd)):
             child_path = name if not path else path + "/" + name
+            if name.startswith("write-") and name.endswith(".tmp") and path.endswith("/.binary-uploads"):
+                continue
             _relative_path(child_path)
             item = os.stat(name, dir_fd=fd, follow_symlinks=False)
             if stat.S_ISDIR(item.st_mode):

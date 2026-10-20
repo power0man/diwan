@@ -106,7 +106,11 @@ def binary_uploads(root):
     files, unavailable = [], []
     try:
         fd = _open_directory(Path(root))
-    except (FileNotFoundError, OSError):
+    except FileNotFoundError:
+        return {"files": files, "unavailable": unavailable}
+    except OSError as exc:
+        code = "unsafe_path" if exc.errno in (errno.ELOOP, errno.ENOTDIR) else "filesystem_error"
+        unavailable.append({"path": "binary", "status": "unavailable", "error_code": code})
         return {"files": files, "unavailable": unavailable}
     try:
         try:
