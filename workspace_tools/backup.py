@@ -476,7 +476,6 @@ def _shape(dirs, data):
                         if not p.startswith(receipts + "/"):
                             continue
                         leaf = p[len(receipts) + 1:]
-                        _need(not (leaf.startswith("write-") and leaf.endswith(".tmp")), "backup_tree_invalid")
                         _need("/" not in leaf and leaf.endswith(".json") and _ordinary(leaf),
                               "backup_tree_invalid")
                         doc = _json(data[p])
