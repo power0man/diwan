@@ -29,7 +29,7 @@
     },
     {
       "source_file": "tests/mutations/test_binary_attachments.jsonl",
-      "source_sha256": "43fc81eaa0f8b2957ebc6adb025a72afc3dd6fbab0383e3b50ba6e0bc4dee358"
+      "source_sha256": "b8f09ed61a56fc1ecd7563ea16682bfef2872ec7e4113b26ed6026a0566306ee"
     }
   ],
   "controller_checks": {
