@@ -344,11 +344,14 @@ def test_binary_copy_reports_filesystem_failure_by_name(app, monkeypatch):
 
 
 def test_binary_uploads_resilient_to_journal_refusal_and_missing_files(app, monkeypatch):
+    import errno
     from agent.journal import JournalRefused
     status1, doc1 = upload(app, 'valid.pdf', pdf_bytes(1024))
     assert status1 == 200
     status2, doc2 = upload(app, 'large.pdf', pdf_bytes(2048))
     assert status2 == 200
+    status4, doc4 = upload(app, 'os_missing.pdf', pdf_bytes(512))
+    assert status4 == 200
 
     uploads = app.project(app.test_project) / 'uploads'
 
@@ -356,10 +359,28 @@ def test_binary_uploads_resilient_to_journal_refusal_and_missing_files(app, monk
     def fake_read_file(root, path, **kwargs):
         if path == doc2['path']:
             raise JournalRefused('file_too_large', 'محاكاة كبر الحجم فوق السقف')
+        if path == doc4['path']:
+            raise FileNotFoundError('محاكاة مسار مفقود من نظام الملفات')
         return orig_read_file(root, path, **kwargs)
     monkeypatch.setattr(agent_workspace, 'read_file', fake_read_file)
 
     (uploads / doc1['path']).unlink()
+    corrupt_receipt = uploads / '.binary-uploads' / 'corrupt.pdf.json'
+    corrupt_receipt.write_text('{"unknown": true}')
+    corrupt_receipt.chmod(0o600)
+
+    # Add receipt with foreign path to test strict path validation in binary_uploads
+    foreign_receipt = uploads / '.binary-uploads' / 'foreign.pdf.json'
+    foreign_receipt.write_text(json.dumps({
+        'path': 'binary/other.pdf',
+        'sha256': hashlib.sha256(pdf_bytes(100)).hexdigest(),
+        'size_bytes': len(pdf_bytes(100)),
+        'mime': 'application/pdf'
+    }))
+    foreign_receipt.chmod(0o600)
+
+    # Add leftover temporary file in .binary-uploads and ensure it is ignored
+    (uploads / '.binary-uploads' / 'write-temporary.tmp').write_bytes(b'leftover')
 
     status3, doc3 = upload(app, 'healthy.pdf', pdf_bytes(512))
     assert status3 == 200
@@ -367,10 +388,82 @@ def test_binary_uploads_resilient_to_journal_refusal_and_missing_files(app, monk
     res = agent_workspace.binary_uploads(uploads)
     assert any(f['path'] == doc3['path'] for f in res['files'])
     unavail = {u['path']: u['error_code'] for u in res['unavailable']}
-    assert doc1['path'] in unavail
-    assert unavail[doc1['path']] in ('agent_file_missing', 'attachment_missing', 'agent_input_changed')
-    assert doc2['path'] in unavail
+    assert unavail[doc1['path']] == 'agent_file_missing'
     assert unavail[doc2['path']] == 'file_too_large'
+    assert unavail[doc4['path']] == 'attachment_missing'
+    assert unavail['binary/corrupt.pdf'] == 'attachment_receipt_invalid'
+    assert unavail['binary/foreign.pdf'] == 'attachment_receipt_invalid'
+    assert not any('write-temporary.tmp' in u['path'] for u in res['unavailable'])
+
+    # Verify _directory raising FileNotFoundError or OSError (symlink loop) returns empty files and unavailable
+    orig_directory = agent_workspace._directory
+    def fake_directory_fnf(fd, path, **kwargs):
+        if path == '.binary-uploads':
+            raise FileNotFoundError('synthetic missing binary-uploads dir')
+        return orig_directory(fd, path, **kwargs)
+    monkeypatch.setattr(agent_workspace, '_directory', fake_directory_fnf)
+    assert agent_workspace.binary_uploads(uploads) == {'files': [], 'unavailable': []}
+
+    def fake_directory_eloop(fd, path, **kwargs):
+        if path == '.binary-uploads':
+            raise OSError(errno.ELOOP, 'synthetic loop in binary-uploads dir')
+        return orig_directory(fd, path, **kwargs)
+    monkeypatch.setattr(agent_workspace, '_directory', fake_directory_eloop)
+    assert agent_workspace.binary_uploads(uploads) == {
+        'files': [],
+        'unavailable': [{'path': 'binary', 'status': 'unavailable', 'error_code': 'unsafe_path'}]
+    }
+
+    def fake_directory_enotdir(fd, path, **kwargs):
+        if path == '.binary-uploads':
+            raise OSError(errno.ENOTDIR, 'synthetic notdir in binary-uploads dir')
+        return orig_directory(fd, path, **kwargs)
+    monkeypatch.setattr(agent_workspace, '_directory', fake_directory_enotdir)
+    assert agent_workspace.binary_uploads(uploads) == {
+        'files': [],
+        'unavailable': [{'path': 'binary', 'status': 'unavailable', 'error_code': 'unsafe_path'}]
+    }
+
+    def fake_directory_eacces(fd, path, **kwargs):
+        if path == '.binary-uploads':
+            raise OSError(errno.EACCES, 'synthetic permission denied in binary-uploads dir')
+        return orig_directory(fd, path, **kwargs)
+    monkeypatch.setattr(agent_workspace, '_directory', fake_directory_eacces)
+    assert agent_workspace.binary_uploads(uploads) == {
+        'files': [],
+        'unavailable': [{'path': 'binary', 'status': 'unavailable', 'error_code': 'filesystem_error'}]
+    }
+
+    # Verify os.listdir failures on root or state directory report filesystem_error
+    orig_open_dir = agent_workspace._open_directory
+    orig_listdir = agent_workspace.os.listdir
+    monkeypatch.setattr(agent_workspace, '_directory', orig_directory)
+    def open_then_fail_listdir(path, **kwargs):
+        real_fd = orig_open_dir(path, **kwargs)
+        def fail_now(fd):
+            raise OSError(errno.EIO, 'synthetic I/O error on listdir')
+        monkeypatch.setattr(agent_workspace.os, 'listdir', fail_now)
+        return real_fd
+    monkeypatch.setattr(agent_workspace, '_open_directory', open_then_fail_listdir)
+    assert agent_workspace.binary_uploads(uploads) == {
+        'files': [],
+        'unavailable': [{'path': 'binary', 'status': 'unavailable', 'error_code': 'filesystem_error'}]
+    }
+
+
+def test_upload_binary_reports_filesystem_failure_on_uploads_dir(app, monkeypatch):
+    import errno
+    uploads = app.project(app.test_project) / 'uploads'
+    uploads.mkdir(parents=True, exist_ok=True)
+    orig_directory = agent_workspace._directory
+    def fake_dir_fail(fd, path, **kwargs):
+        if path == '.binary-uploads':
+            raise OSError(errno.ELOOP, 'synthetic symlink loop')
+        return orig_directory(fd, path, **kwargs)
+    monkeypatch.setattr(agent_workspace, '_directory', fake_dir_fail)
+    with pytest.raises(WorkspaceError) as exc:
+        agent_workspace.upload_binary(uploads, 'loop.pdf', base64.b64encode(pdf_bytes(100)).decode())
+    assert exc.value.code == 'unsafe_path'
 
 
 def test_binary_backup_succeeds_even_when_binary_file_is_missing(app, tmp_path):
@@ -382,11 +475,14 @@ def test_binary_backup_succeeds_even_when_binary_file_is_missing(app, tmp_path):
     target_file.unlink()
     assert not target_file.exists()
 
-    receipts_dir = app.project(app.test_project) / 'uploads/.binary-uploads'
-    assert any(receipts_dir.iterdir())
-
     app.close()
     app.test_closed = True
+
+    receipts_dir = app.project(app.test_project) / 'uploads/.binary-uploads'
+    assert any(receipts_dir.iterdir())
+    leftover_tmp = receipts_dir / 'write-leftover.tmp'
+    leftover_tmp.write_bytes(b'interrupted write payload')
+    leftover_tmp.chmod(0o600)
 
     archive = tmp_path.resolve() / 'resilient-backup.json'
     result = backup.export_workspace(app.root, archive)
@@ -394,3 +490,54 @@ def test_binary_backup_succeeds_even_when_binary_file_is_missing(app, tmp_path):
     assert backup.inspect_archive(archive, result['sha256'])['status'] == 'verified'
     restored = tmp_path / 'restored'
     assert backup.restore_workspace(archive, restored, result['sha256'])['status'] == 'restored'
+
+    uploads_restored = restored / 'projects' / app.test_project / 'uploads'
+    receipt_leaf = Path(doc['path']).name + '.json'
+    assert (uploads_restored / '.binary-uploads' / receipt_leaf).exists()
+    assert not (uploads_restored / doc['path']).exists()
+    restored_status = agent_workspace.binary_uploads(uploads_restored)
+    assert restored_status['files'] == []
+    assert restored_status['unavailable'] == [{'path': doc['path'],
+                                              'status': 'unavailable',
+                                              'error_code': 'agent_file_missing'}]
+
+
+def test_binary_backup_refuses_corrupt_receipt_even_when_binary_file_is_missing(app, tmp_path):
+    from workspace_tools import backup
+    status, doc = upload(app, 'missing.pdf', pdf_bytes(2048))
+    assert status == 200
+
+    target_file = app.project(app.test_project) / 'uploads' / doc['path']
+    target_file.unlink()
+    assert not target_file.exists()
+
+    app.close()
+    app.test_closed = True
+
+    receipts_dir = app.project(app.test_project) / 'uploads/.binary-uploads'
+    receipt_file = next(receipts_dir.iterdir())
+    original_stored = json.loads(receipt_file.read_bytes())
+
+    corruptions = [
+        ('sha256', '0' * 63),
+        ('sha256', 'not-a-hex-sha256-digest-value-that-meets-the-64-character-length'),
+        ('size_bytes', -1),
+        ('size_bytes', 'invalid_size'),
+        ('mime', 'text/plain'),
+        ('path', 'binary/different_target.pdf'),
+        ('extra_key', 'unexpected_field'),
+    ]
+
+    for i, (corrupt_key, corrupt_val) in enumerate(corruptions):
+        stored = dict(original_stored)
+        if corrupt_key == 'extra_key':
+            stored[corrupt_key] = corrupt_val
+        elif corrupt_key in stored:
+            stored[corrupt_key] = corrupt_val
+        receipt_file.write_text(json.dumps(stored))
+
+        archive = tmp_path.resolve() / f'corrupt-backup-{i}.json'
+        with pytest.raises(backup.BackupError) as exc:
+            backup.export_workspace(app.root, archive)
+        assert exc.value.code == 'backup_invalid'
+        assert not archive.exists()

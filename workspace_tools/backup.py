@@ -465,23 +465,23 @@ def _shape(dirs, data):
             receipts = artifact + "/.binary-uploads"
             if category == "uploads" and receipts in dirs:
                 allowed_dirs.add(receipts)
-                from services.agent_workspace import BINARY_MIMES, validate_binary
+                from services.agent_workspace import validate_binary, validate_receipt_shape
                 for p in data:
                     if not p.startswith(receipts + "/"):
                         continue
                     leaf = p[len(receipts) + 1:]
+                    if leaf.startswith("write-") and leaf.endswith(".tmp"):
+                        allowed_files.add(p)
+                        continue
                     _need("/" not in leaf and leaf.endswith(".json") and _ordinary(leaf),
                           "backup_tree_invalid")
                     doc = _json(data[p])
                     target = "binary/" + leaf[:-5]
-                    _need(type(doc) is dict and set(doc) == {"path", "sha256", "size_bytes", "mime"}
-                          and doc["path"] == target,
-                          "backup_invalid")
+                    _need(validate_receipt_shape(doc, target), "backup_invalid")
                     if artifact + "/" + target in data:
                         raw = data[artifact + "/" + target]
                         _need(type(doc["size_bytes"]) is int and doc["size_bytes"] == len(raw)
-                              and doc["sha256"] == hashlib.sha256(raw).hexdigest()
-                              and doc["mime"] == BINARY_MIMES.get(Path(target).suffix.lower()),
+                              and doc["sha256"] == hashlib.sha256(raw).hexdigest(),
                               "backup_invalid")
                         validate_binary(raw, target)
                     allowed_files.add(p)

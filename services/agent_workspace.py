@@ -3,12 +3,14 @@ from __future__ import annotations
 
 import hashlib
 import base64
+import errno
 import json
 import os
 from pathlib import Path
+import re
 import stat
 
-from agent.journal import _directory, _open_directory, _read
+from agent.journal import JournalRefused, _directory, _open_directory, _read
 from core.canonical import canonical_bytes
 from core.quoted import quarantine_quoted
 from multimodal.codec import MAX_MEDIA_BYTES, MAX_PDF_BYTES, MediaError, pack_media
@@ -28,6 +30,16 @@ PREFERENCE_POLICY = (
 )
 
 BINARY_MIMES = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".pdf": "application/pdf"}
+_SHA = re.compile(r"^[0-9a-f]{64}$")
+
+
+def validate_receipt_shape(doc, target):
+    """Ensure upload receipt shape is strictly valid before admitting it."""
+    return (type(doc) is dict and set(doc) == {"path", "sha256", "size_bytes", "mime"}
+            and doc["path"] == target
+            and type(doc["size_bytes"]) is int and doc["size_bytes"] >= 0
+            and type(doc["sha256"]) is str and bool(_SHA.fullmatch(doc["sha256"]))
+            and doc["mime"] == BINARY_MIMES.get(Path(target).suffix.lower()))
 
 
 def attachment_limit(name):
@@ -76,7 +88,10 @@ def upload_binary(root, path, encoded):
            "size_bytes": len(raw), "mime": BINARY_MIMES[Path(name).suffix.lower()]}
     fd = _open_directory(Path(root))
     try:
-        state = _directory(fd, ".binary-uploads", create=True)
+        try:
+            state = _directory(fd, ".binary-uploads", create=True)
+        except OSError as exc:
+            _io_error(exc)
         try:
             _write_json(state, path + ".json", doc)
         finally:
@@ -89,30 +104,56 @@ def upload_binary(root, path, encoded):
 def binary_uploads(root):
     """Changed or incomplete uploads never become selected inputs."""
     files, unavailable = [], []
-    fd = _open_directory(Path(root))
     try:
-        if ".binary-uploads" not in os.listdir(fd):
+        fd = _open_directory(Path(root))
+    except (FileNotFoundError, OSError):
+        return {"files": files, "unavailable": unavailable}
+    try:
+        try:
+            entries = os.listdir(fd)
+        except OSError:
+            unavailable.append({"path": "binary", "status": "unavailable", "error_code": "filesystem_error"})
+            return {"files": files, "unavailable": unavailable}
+        if ".binary-uploads" not in entries:
             return {"files": files, "unavailable": unavailable}
         try:
             state = _directory(fd, ".binary-uploads")
         except FileNotFoundError:
             return {"files": files, "unavailable": unavailable}
+        except OSError as exc:
+            code = "unsafe_path" if exc.errno in (errno.ELOOP, errno.ENOTDIR) else "filesystem_error"
+            unavailable.append({"path": "binary", "status": "unavailable", "error_code": code})
+            return {"files": files, "unavailable": unavailable}
         try:
-            for receipt in sorted(os.listdir(state)):
+            try:
+                receipts = os.listdir(state)
+            except OSError:
+                unavailable.append({"path": "binary", "status": "unavailable", "error_code": "filesystem_error"})
+                return {"files": files, "unavailable": unavailable}
+            for receipt in sorted(receipts):
+                if not receipt.endswith(".json") or receipt.startswith("."):
+                    continue
+                target = "binary/" + receipt.removesuffix(".json")
                 try:
                     doc = _read_json(state, receipt)
+                    if not validate_receipt_shape(doc, target):
+                        _fail("attachment_receipt_invalid")
                     raw, _ = read_file(root, doc["path"], limit=attachment_limit(doc["path"]))
                     if (hashlib.sha256(raw).hexdigest() != doc["sha256"]
                             or len(raw) != doc["size_bytes"]):
                         _fail("agent_input_changed")
                     validate_binary(raw, doc["path"])
                     files.append(doc)
-                except (WorkspaceError, ValueError, KeyError, TypeError, RuntimeError, FileNotFoundError) as exc:
-                    code = getattr(exc, "code", None) or (
-                        "attachment_missing" if isinstance(exc, FileNotFoundError)
-                        else "attachment_receipt_invalid"
-                    )
-                    unavailable.append({"path": "binary/" + receipt.removesuffix(".json"),
+                except (WorkspaceError, ValueError, KeyError, TypeError, JournalRefused, OSError) as exc:
+                    if isinstance(exc, (WorkspaceError, JournalRefused)):
+                        code = exc.code
+                    elif isinstance(exc, FileNotFoundError):
+                        code = "attachment_missing"
+                    elif isinstance(exc, OSError):
+                        code = "filesystem_error"
+                    else:
+                        code = "attachment_receipt_invalid"
+                    unavailable.append({"path": target,
                                         "status": "unavailable",
                                         "error_code": code})
         finally:
