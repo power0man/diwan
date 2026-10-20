@@ -81,8 +81,10 @@ def _fail(code, reason="تعذر التحقق من النسخة المحلية")
     raise BackupError(code, reason)
 
 
-def _need(condition, code="backup_invalid"):
+def _need(condition, code="backup_invalid", reason=None):
     if not condition:
+        if reason is not None:
+            _fail(code, reason)
         _fail(code)
 
 
@@ -206,6 +208,9 @@ def _inventory(root_fd):
             child_path = name if not path else path + "/" + name
             _relative_path(child_path)
             item = os.stat(name, dir_fd=fd, follow_symlinks=False)
+            if (stat.S_ISREG(item.st_mode) and name.startswith("write-") and name.endswith(".tmp")
+                    and path.count("/") == 3 and path.startswith("projects/") and path.endswith("/uploads/.binary-uploads")):
+                continue
             if stat.S_ISDIR(item.st_mode):
                 child = os.open(name, _DIR, dir_fd=fd)
                 try:
@@ -462,8 +467,40 @@ def _shape(dirs, data):
                 allowed_dirs.update({internal, internal + "/writes"})
                 allowed_files.update(internal_files)
                 stores.append(artifact)
+            receipts = artifact + "/.binary-uploads"
+            if category == "uploads":
+                has_receipts_entries = any(p.startswith(receipts + "/") for p in set(dirs) | set(data))
+                if receipts in dirs or has_receipts_entries:
+                    _need(receipts in dirs, "backup_tree_invalid")
+                    allowed_dirs.add(receipts)
+                    from services.agent_workspace import validate_binary, validate_receipt_shape
+                    for p in data:
+                        if not p.startswith(receipts + "/"):
+                            continue
+                        leaf = p[len(receipts) + 1:]
+                        _need("/" not in leaf and leaf.endswith(".json") and _ordinary(leaf),
+                              "backup_tree_invalid", f"ملف إيصال غير صالح: {p}")
+                        try:
+                            doc = _json(data[p])
+                        except Exception:
+                            _fail("backup_invalid", f"إيصال مرفق ثنائي غير صالح: {p}")
+                        target = "binary/" + leaf[:-5]
+                        _need(validate_receipt_shape(doc, target), "backup_invalid",
+                              f"هيكل إيصال مرفق غير صالح: {p}")
+                        if artifact + "/" + target in data:
+                            raw = data[artifact + "/" + target]
+                            _need(type(doc["size_bytes"]) is int and doc["size_bytes"] == len(raw)
+                                  and doc["sha256"] == hashlib.sha256(raw).hexdigest(),
+                                  "backup_invalid", f"مرفق ثنائي متغيّر أو غير مطابق: {target}")
+                            try:
+                                validate_binary(raw, target)
+                            except Exception:
+                                _fail("backup_invalid", f"محتوى مرفق ثنائي تالف: {target}")
+                        allowed_files.add(p)
             for p in set(dirs) | set(data):
                 if not p.startswith(artifact + "/") or p.startswith(internal + "/") or p == internal:
+                    continue
+                if category == "uploads" and (p == receipts or p in allowed_files and p.startswith(receipts + "/")):
                     continue
                 _relative(p[len(artifact) + 1:], writing=True)
                 (allowed_dirs if p in dirs else allowed_files).add(p)
