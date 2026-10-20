@@ -324,8 +324,9 @@ def test_binary_backup_refuses_changed_or_foreign_receipts(app, tmp_path, bad):
         receipt.write_text(json.dumps(stored))
     app.close()
     app.test_closed = True
-    with pytest.raises(backup.BackupError):
+    with pytest.raises(backup.BackupError) as exc:
         backup.export_workspace(app.root, tmp_path.resolve() / 'invalid-backup.json')
+    assert exc.value.code == 'backup_invalid'
     assert not (tmp_path / 'invalid-backup.json').exists()
 
 
@@ -511,6 +512,10 @@ def test_binary_backup_succeeds_even_when_binary_file_is_missing(app, tmp_path):
     leftover_tmp.write_bytes(b'interrupted write payload')
     leftover_tmp.chmod(0o600)
 
+    allowed_outside_tmp = app.project(app.test_project) / 'uploads' / 'write-allowed.tmp'
+    allowed_outside_tmp.write_bytes(b'preserved temp file outside receipts dir')
+    allowed_outside_tmp.chmod(0o600)
+
     archive = tmp_path.resolve() / 'resilient-backup.json'
     result = backup.export_workspace(app.root, archive)
     assert archive.exists()
@@ -522,6 +527,7 @@ def test_binary_backup_succeeds_even_when_binary_file_is_missing(app, tmp_path):
     receipt_leaf = Path(doc['path']).name + '.json'
     assert (uploads_restored / '.binary-uploads' / receipt_leaf).exists()
     assert not (uploads_restored / '.binary-uploads' / 'write-leftover.tmp').exists()
+    assert (uploads_restored / 'write-allowed.tmp').exists()
     assert not (uploads_restored / doc['path']).exists()
     restored_status = agent_workspace.binary_uploads(uploads_restored)
     assert restored_status['files'] == []
@@ -625,4 +631,28 @@ def test_binary_uploads_handles_unexpected_exception(app, monkeypatch):
     assert res['unavailable'] == [{'path': doc['path'],
                                   'status': 'unavailable',
                                   'error_code': 'attachment_receipt_invalid'}]
+
+
+def test_binary_backup_refuses_malformed_binary_content_with_backup_invalid():
+    from workspace_tools import backup
+    dirs = {'', 'projects', 'staging', 'projects/p1', 'projects/p1/sessions',
+            'projects/p1/uploads', 'projects/p1/uploads/.binary-uploads'}
+    corrupt_png = b'not a valid png stream'
+    receipt = {
+        'format': 'binary-receipt-v1',
+        'sha256': hashlib.sha256(corrupt_png).hexdigest(),
+        'size_bytes': len(corrupt_png),
+        'mime': 'image/png',
+        'path': 'binary/corrupt.png',
+    }
+    meta = json.dumps({'id': 'p1', 'name': 'Project 1'}).encode('utf-8')
+    data = {
+        'projects/p1/meta.json': meta,
+        'projects/p1/uploads/.binary-uploads/corrupt.png.json': json.dumps(receipt).encode('utf-8'),
+        'projects/p1/uploads/binary/corrupt.png': corrupt_png,
+    }
+    with pytest.raises(backup.BackupError) as exc:
+        backup._shape(dirs, data)
+    assert exc.value.code == 'backup_invalid'
+
 

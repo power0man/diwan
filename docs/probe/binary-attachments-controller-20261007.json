@@ -67,7 +67,7 @@
     "The previous full-suite and mutation counts above do not verify these subsequent review corrections.",
     "The final immutable-head full suite and mutation report must pass before pushing and be attached to the PR.",
     "OCR uses synthetic providers; no real document recognition accuracy was measured.",
-    "Backups retain the existing32 MiB total raw-data ceiling; repeated per-turn copies count toward it.",
+    "Backups retain the existing 32 MiB total raw-data ceiling; repeated per-turn copies count toward it.",
     "No large attachment catalog performance benchmark was run.",
     "Controller intervention is not autonomous worker completion, approval, merge, acceptance or deployment."
   ]
