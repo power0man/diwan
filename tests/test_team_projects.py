@@ -17,7 +17,7 @@ class Done:
 
 def _project(payloads: dict):
     def runner(argv, **kw):
-        key = " ".join(argv[:3])
+        key = " ".join(argv)
         for prefix, payload in payloads.items():
             if key.startswith(prefix):
                 return Done(json.dumps(payload) if not isinstance(payload, str) else payload)
@@ -70,8 +70,17 @@ def test_author_families_come_from_diwan_agent_trailers():
     assert project.author_families(pull) == {"anthropic", "openai"}
 
 
-def _runs(*items, status="completed"):
-    return {"gh api repos/power0man/diwan/commits/h/check-runs": {"check_runs": [{"name": n, "status": status, "conclusion": c} for n, c in items]}}
+def _runs(*items, status="completed", summary="no_review_from_another_family", reviews=None):
+    if reviews is None:
+        reviews = [[]]
+    return {
+        "gh api repos/power0man/diwan/commits/h/check-runs": {
+            "check_runs": [{"name": n, "status": status, "conclusion": c,
+                            "output": {"summary": summary if n == "family-review" else ""}}
+                           for n, c in items]
+        },
+        "gh api --paginate --slurp repos/power0man/diwan/pulls/10/reviews": reviews,
+    }
 
 
 def test_checks_are_mapped_to_success_failure_pending_or_none():
@@ -103,3 +112,181 @@ def test_issue_is_read_from_the_body_then_the_branch():
     assert DiwanProject.issue_of("…\n\nRefs #341\n", "x") == 341
     assert DiwanProject.issue_of("", "team/342-anthropic") == 342
     assert DiwanProject.issue_of("", "claude/other") is None
+
+
+def test_family_review_failure_excused_only_with_qualified_native_review():
+    project = _project(_runs(("verify-hosted", "success"), ("family-review", "failure")))
+    assert project.checks("h") == "failure"
+    assert project.checks("h", native_review=None) == "failure"
+
+    valid_review = {
+        "head_sha": "h",
+        "verdict": "pass",
+        "reviewer": "claude",
+        "reviewer_family": "anthropic",
+        "calibrated": True,
+        "review_ref": "https://github.com/power0man/diwan/pull/1#issuecomment-1",
+    }
+    pull = PullRequest(10, "h", "main", "team/10", 10)
+    assert project.checks("h", native_review=valid_review, author_families={"openai"}, pull=pull) == "success"
+    assert project.checks("h", native_review=valid_review, author_families={"openai"}, pull=None) == "failure"
+    assert project.checks("h", native_review=valid_review, author_families={"anthropic"}, pull=pull) == "failure"
+    assert project.checks("h", native_review=valid_review, author_families={"openai", "anthropic"}, pull=pull) == "failure"
+
+    stale_review = dict(valid_review, head_sha="old_head")
+    assert project.checks("h", native_review=stale_review, author_families={"openai"}, pull=pull) == "failure"
+
+    revise_review = dict(valid_review, verdict="revise")
+    assert project.checks("h", native_review=revise_review, author_families={"openai"}, pull=pull) == "failure"
+    reject_review = dict(valid_review, verdict="reject")
+    assert project.checks("h", native_review=reject_review, author_families={"openai"}, pull=pull) == "failure"
+
+    uncalibrated = dict(valid_review, calibrated=False)
+    assert project.checks("h", native_review=uncalibrated, author_families={"openai"}, pull=pull) == "failure"
+
+    unregistered = dict(valid_review, reviewer="unregistered_bot")
+    assert project.checks("h", native_review=unregistered, author_families={"openai"}, pull=pull) == "failure"
+
+    broken_project = _project({
+        "gh api repos/power0man/diwan/commits/h/check-runs": {
+            "check_runs": [
+                {"name": "verify-hosted", "status": "completed", "conclusion": "failure", "output": {"summary": "no_review_from_another_family"}},
+                {"name": "family-review", "status": "completed", "conclusion": "failure", "output": {"summary": "no_review_from_another_family"}},
+            ]
+        },
+        "gh api --paginate --slurp repos/power0man/diwan/pulls/10/reviews": [[]],
+    })
+    assert broken_project.checks("h", native_review=valid_review, author_families={"openai"}, pull=pull) == "failure"
+
+    broken_project2 = _project(_runs(("verify-hosted", "success"), ("container-smoke", "failure"), ("family-review", "failure")))
+    assert broken_project2.checks("h", native_review=valid_review, author_families={"openai"}, pull=pull) == "failure"
+
+    no_absence_project = _project(_runs(("verify-hosted", "success"), ("family-review", "failure"), summary="bot_rejected"))
+    assert no_absence_project.checks("h", native_review=valid_review, author_families={"openai"}, pull=pull) == "failure"
+
+    action_required_project = _project(_runs(("verify-hosted", "success"), ("family-review", "action_required")))
+    assert action_required_project.checks("h", native_review=valid_review, author_families={"openai"}, pull=pull) == "failure"
+
+    pr_cr_payload = {
+        "gh api repos/power0man/diwan/commits/h/check-runs": {
+            "check_runs": [
+                {"name": "verify-hosted", "status": "completed", "conclusion": "success"},
+                {"name": "family-review", "status": "completed", "conclusion": "failure", "output": {"summary": "no_review_from_another_family"}},
+            ]
+        },
+        "gh api --paginate --slurp repos/power0man/diwan/pulls/10/reviews": [
+            [{"state": "CHANGES_REQUESTED"}]
+        ]
+    }
+    assert _project(pr_cr_payload).checks("h", native_review=valid_review, author_families={"openai"}, pull=pull) == "failure"
+
+    multipage_cr_payload = {
+        "gh api repos/power0man/diwan/commits/h/check-runs": {
+            "check_runs": [
+                {"name": "verify-hosted", "status": "completed", "conclusion": "success"},
+                {"name": "family-review", "status": "completed", "conclusion": "failure", "output": {"summary": "no_review_from_another_family"}},
+            ]
+        },
+        "gh api --paginate --slurp repos/power0man/diwan/pulls/10/reviews": [
+            [{"state": "APPROVED"}],
+            [{"state": "CHANGES_REQUESTED"}],
+        ]
+    }
+    assert _project(multipage_cr_payload).checks("h", native_review=valid_review, author_families={"openai"}, pull=pull) == "failure"
+
+    multipage_ok_payload = {
+        "gh api repos/power0man/diwan/commits/h/check-runs": {
+            "check_runs": [
+                {"name": "verify-hosted", "status": "completed", "conclusion": "success"},
+                {"name": "family-review", "status": "completed", "conclusion": "failure", "output": {"summary": "no_review_from_another_family"}},
+            ]
+        },
+        "gh api --paginate --slurp repos/power0man/diwan/pulls/10/reviews": [
+            [{"state": "COMMENTED"}],
+            [{"state": "APPROVED"}],
+        ]
+    }
+    assert _project(multipage_ok_payload).checks("h", native_review=valid_review, author_families={"openai"}, pull=pull) == "success"
+
+    pages_not_list_payload = {
+        "gh api repos/power0man/diwan/commits/h/check-runs": {
+            "check_runs": [
+                {"name": "verify-hosted", "status": "completed", "conclusion": "success"},
+                {"name": "family-review", "status": "completed", "conclusion": "failure", "output": {"summary": "no_review_from_another_family"}},
+            ]
+        },
+        "gh api --paginate --slurp repos/power0man/diwan/pulls/10/reviews": {}
+    }
+    assert _project(pages_not_list_payload).checks("h", native_review=valid_review, author_families={"openai"}, pull=pull) == "failure"
+
+    page_not_list_payload = {
+        "gh api repos/power0man/diwan/commits/h/check-runs": {
+            "check_runs": [
+                {"name": "verify-hosted", "status": "completed", "conclusion": "success"},
+                {"name": "family-review", "status": "completed", "conclusion": "failure", "output": {"summary": "no_review_from_another_family"}},
+            ]
+        },
+        "gh api --paginate --slurp repos/power0man/diwan/pulls/10/reviews": [
+            123
+        ]
+    }
+    assert _project(page_not_list_payload).checks("h", native_review=valid_review, author_families={"openai"}, pull=pull) == "failure"
+
+    item_not_dict_payload = {
+        "gh api repos/power0man/diwan/commits/h/check-runs": {
+            "check_runs": [
+                {"name": "verify-hosted", "status": "completed", "conclusion": "success"},
+                {"name": "family-review", "status": "completed", "conclusion": "failure", "output": {"summary": "no_review_from_another_family"}},
+            ]
+        },
+        "gh api --paginate --slurp repos/power0man/diwan/pulls/10/reviews": [
+            ["not-a-dict-review"]
+        ]
+    }
+    assert _project(item_not_dict_payload).checks("h", native_review=valid_review, author_families={"openai"}, pull=pull) == "failure"
+
+    assert project.checks("h", native_review="non-dict-review", author_families={"openai"}, pull=pull) == "failure"
+
+    pr_reviews_err_payload = {
+        "gh api repos/power0man/diwan/commits/h/check-runs": {
+            "check_runs": [
+                {"name": "verify-hosted", "status": "completed", "conclusion": "success"},
+                {"name": "family-review", "status": "completed", "conclusion": "failure", "output": {"summary": "no_review_from_another_family"}},
+            ]
+        }
+    }
+    assert _project(pr_reviews_err_payload).checks("h", native_review=valid_review, author_families={"openai"}, pull=pull) == "failure"
+
+    assert project.checks("h", native_review=valid_review, author_families=None, pull=pull) == "failure"
+    assert project.checks("h", native_review=valid_review, author_families=set(), pull=pull) == "failure"
+
+    missing_calibrated = dict(valid_review)
+    del missing_calibrated["calibrated"]
+    assert project.checks("h", native_review=missing_calibrated, author_families={"openai"}, pull=pull) == "failure"
+
+    mismatched_family = dict(valid_review, reviewer="claude", reviewer_family="google")
+    assert project.checks("h", native_review=mismatched_family, author_families={"openai"}, pull=pull) == "failure"
+
+    unadmitted_candidate = dict(valid_review, reviewer="codex", reviewer_family="openai")
+    assert project.checks("h", native_review=unadmitted_candidate, author_families={"openai"}, pull=pull) == "failure"
+
+    no_ref = dict(valid_review, review_ref="")
+    assert project.checks("h", native_review=no_ref, author_families={"openai"}, pull=pull) == "failure"
+
+
+def test_review_policy_enforced_by_q75_table():
+    project = _project(_runs(("verify-hosted", "success"), ("family-review", "failure")))
+    pull = PullRequest(10, "h", "main", "team/10", 10)
+    google_review = {
+        "head_sha": "h",
+        "verdict": "pass",
+        "reviewer": "claude",
+        "reviewer_family": "anthropic",
+        "calibrated": True,
+        "review_ref": "c-1",
+    }
+    assert project.checks("h", native_review=google_review, author_families={"google"}, pull=pull) == "success"
+    codex_review = dict(google_review, reviewer="codex", reviewer_family="openai")
+    assert project.checks("h", native_review=codex_review, author_families={"google"}, pull=pull) == "success"
+    assert project.checks("h", native_review=codex_review, author_families={"anthropic"}, pull=pull) == "success"
+    assert project.checks("h", native_review=google_review, author_families={"anthropic"}, pull=pull) == "failure"

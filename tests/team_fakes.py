@@ -96,8 +96,21 @@ class FakeProject(ProjectAdapter):
         self.comments.append((number, body))
         return f"comment-{len(self.comments)}"
 
-    def checks(self, head_sha: str) -> str:
-        return self.checks_by_head.get(head_sha, "none")
+    def checks(self, head_sha: str, *, native_review: dict | None = None, author_families: set[str] | None = None, pull: PullRequest | None = None) -> str:
+        self.last_checks_args = {
+            "head_sha": head_sha,
+            "native_review": native_review,
+            "author_families": author_families,
+            "pull": pull,
+        }
+        res = self.checks_by_head.get(head_sha, "none")
+        if res == "family_review_failure":
+            from team.projects.diwan import DiwanProject
+            dp = DiwanProject()
+            if dp.is_valid_native_review(head_sha, native_review, author_families=author_families):
+                return "success"
+            return "failure"
+        return res
 
     def author_families(self, pull: PullRequest) -> set[str]:
         families = set()

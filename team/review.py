@@ -250,10 +250,10 @@ class Reviewer:
             return "review_uncalibrated"
         state = self.ledger.main_state(issue)["state"]
         if state == "validated":
-            self.ledger.append(issue, "verified", head_sha=head, review_ref=ref, reviewer=adapter.spec.name, reviewer_family=family, verdict=verdict)
+            self.ledger.append(issue, "verified", head_sha=head, review_ref=ref, reviewer=adapter.spec.name, reviewer_family=family, verdict=verdict, calibrated=True)
             return "verified"
         self.ledger.append(issue, "reviewed_awaiting_validation", head_sha=head, review_ref=ref, reviewer=adapter.spec.name,
-                           reviewer_family=family, verdict=verdict)
+                           reviewer_family=family, verdict=verdict, calibrated=True)
         return "reviewed_awaiting_validation"
 
     def review(self, pr_number: int, *, execute: bool = False, reviewer: str | None = None, timeout: int = 1200) -> dict:

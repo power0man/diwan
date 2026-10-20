@@ -91,7 +91,7 @@ class ProjectAdapter:
         """يعلّق ويعيد مرجعَ التعليق."""
         raise NotImplementedError("comment")
 
-    def checks(self, head_sha: str) -> str:
+    def checks(self, head_sha: str, *, native_review: dict | None = None, author_families: set[str] | None = None, pull: PullRequest | None = None) -> str:
         """حالةُ فحوص الرأس: success | failure | pending | none."""
         raise NotImplementedError("checks")
 
