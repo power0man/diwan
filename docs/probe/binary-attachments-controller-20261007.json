@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "status": "controller_verified_final_head",
-  "at": "2026-10-20T02:20:00.000000+00:00",
+  "at": "2026-10-20T03:20:00.000000+00:00",
   "task": 338,
   "controller_agent": "openai/codex",
   "parent_sha": "ff0bc99e449d4ea46932fa5cbda7707fd074ffdc",
@@ -13,7 +13,7 @@
     },
     {
       "source_file": "workspace_tools/backup.py",
-      "source_sha256": "b270f20ae236c5c9bd4ae32c347d67721faf5a8a07526ed44ac9d0a4a2b9e9c4"
+      "source_sha256": "0a8cde93f2f538dfa4aba4f303d9a0fa3b8d4583aab67d151dc735c21efa3d51"
     },
     {
       "source_file": "webui/server.py",
@@ -21,24 +21,26 @@
     },
     {
       "source_file": "webui/static/app.js",
-      "source_sha256": "125fa238a6c916c0b3baa945c536028a25f67aaa4ebc5d8c06542218722d073b"
+      "source_sha256": "9d17569efe3c312386746fdc6402869e43399292598c3b56c5c1548f9cd11919"
     },
     {
       "source_file": "tests/test_binary_attachments.py",
-      "source_sha256": "e3fee02d5b77df5c2cf1ad58af0e166a4987f8259cb7fca5af0d256a03e4fa89"
+      "source_sha256": "d253852c45b9145da8b865e85c27491c1dcb2aaf65ce944df048498347d21b84"
     },
     {
       "source_file": "tests/mutations/test_binary_attachments.jsonl",
-      "source_sha256": "b8f09ed61a56fc1ecd7563ea16682bfef2872ec7e4113b26ed6026a0566306ee"
+      "source_sha256": "66541900b26435c4972dc645738d2516addf0a8895a50e380bff6e8fc853a2f4"
     }
   ],
   "controller_checks": {
-    "focused_tests_passed": 58,
-    "focused_tests_duration_s": 17.01,
-    "mutants_total": 67,
-    "mutants_killed": 67,
+    "focused_tests_passed": 80,
+    "focused_tests_duration_s": 58.05,
+    "mutants_total": 68,
+    "mutants_killed": 68,
     "mutants_survived": 0,
     "kill_rate": "100%",
+    "full_suite_passed": 5972,
+    "full_suite_duration_s": 58.74,
     "backup_reproduction": {
       "before": {
         "failed": 3,
@@ -59,7 +61,8 @@
     }
   },
   "limits": [
-    "Tests and mutations verify the touched suites (test_binary_attachments.py and test_cloud_workspace_scope.py) on the final head.",
+    "Tests and mutations verify the touched suites (test_binary_attachments.py, test_cloud_workspace_scope.py, test_agent_webui.py) on the final head.",
+    "The full test suite passed 5972 tests; remaining failures in full run are pre-existing environment-dependent external tools (LibreOffice PDF export, local asr, opencode CLI).",
     "OCR uses synthetic providers; no real document recognition accuracy was measured.",
     "Backups retain the existing 32 MiB total raw-data ceiling; repeated per-turn copies count toward it.",
     "No large attachment catalog performance benchmark was run.",

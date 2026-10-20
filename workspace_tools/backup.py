@@ -479,10 +479,14 @@ def _shape(dirs, data):
                             continue
                         leaf = p[len(receipts) + 1:]
                         _need("/" not in leaf and leaf.endswith(".json") and _ordinary(leaf),
-                              "backup_tree_invalid")
-                        doc = _json(data[p])
+                              "backup_tree_invalid", f"ملف إيصال غير صالح: {p}")
+                        try:
+                            doc = _json(data[p])
+                        except Exception:
+                            _fail("backup_invalid", f"إيصال مرفق ثنائي غير صالح: {p}")
                         target = "binary/" + leaf[:-5]
-                        _need(validate_receipt_shape(doc, target), "backup_invalid")
+                        _need(validate_receipt_shape(doc, target), "backup_invalid",
+                              f"هيكل إيصال مرفق غير صالح: {p}")
                         if artifact + "/" + target in data:
                             raw = data[artifact + "/" + target]
                             _need(type(doc["size_bytes"]) is int and doc["size_bytes"] == len(raw)

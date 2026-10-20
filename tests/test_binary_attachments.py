@@ -327,6 +327,7 @@ def test_binary_backup_refuses_changed_or_foreign_receipts(app, tmp_path, bad):
     with pytest.raises(backup.BackupError) as exc:
         backup.export_workspace(app.root, tmp_path.resolve() / 'invalid-backup.json')
     assert exc.value.code == 'backup_invalid'
+    assert doc['path'] in exc.value.reason or 'binary/' in exc.value.reason or 'uploads' in exc.value.reason
     assert not (tmp_path / 'invalid-backup.json').exists()
 
 
@@ -574,6 +575,7 @@ def test_binary_backup_refuses_corrupt_receipt_even_when_binary_file_is_missing(
         with pytest.raises(backup.BackupError) as exc:
             backup.export_workspace(app.root, archive)
         assert exc.value.code == 'backup_invalid'
+        assert receipt_file.name in exc.value.reason or '.binary-uploads' in exc.value.reason
         assert not archive.exists()
 
 
@@ -608,6 +610,7 @@ def test_binary_backup_refuses_archive_with_tmp_file_or_missing_dir(app, tmp_pat
     with pytest.raises(backup.BackupError) as exc:
         backup.restore_workspace(bad_archive_tmp, restored_tmp, hashlib.sha256(raw_bad).hexdigest())
     assert exc.value.code == 'backup_tree_invalid'
+    assert 'write-evil.tmp' in exc.value.reason or '.binary-uploads' in exc.value.reason
 
     # 2. Archive with .binary-uploads file but receipts directory omitted from dirs
     dirs, data, _, _, _ = backup._validate_bundle(json.loads(archive.read_text('utf-8')))
@@ -665,7 +668,13 @@ def test_validate_receipt_shape_refuses_disallowed_extension_or_null_mime():
         'sha256': '0' * 64,
     }
     assert not validate_receipt_shape(doc, 'binary/evil.gif')
-    assert not validate_receipt_shape(doc, 'binary/evil.pdf')
+    doc_pdf = {
+        'path': 'binary/evil.pdf',
+        'mime': None,
+        'size_bytes': 0,
+        'sha256': '0' * 64,
+    }
+    assert not validate_receipt_shape(doc_pdf, 'binary/evil.pdf')
 
 
 
