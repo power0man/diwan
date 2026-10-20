@@ -15,7 +15,7 @@
       "license_text_bytes": 0,
       "read_on": "2026-10-20",
       "pending": "ollama_show_failed_tag_retired_upstream_on_the_mac",
-      "stderr_first_line": "Error: deepseek-v4-flash:0731 was retired on September 25, 2026. Try glm-5.3-flash:cloud. (ref: b39cb6e8-3d0d-4381-b0df-a6f8fa7978db)"
+      "stderr_first_line": "Error: deepseek-v4-flash:0731 was retired on September 25, 2026. Try glm-5.3-flash:cloud. (ref: 9074de0c-bfb1-4a1e-8fd7-050e62911509)"
     },
     {
       "tag": "deepseek-v4.1-flash:cloud",
@@ -24,7 +24,8 @@
       "exit_code": 0,
       "license_text_bytes": 1,
       "read_on": "2026-10-20",
-      "pending": "ollama_show_license_returned_empty_text_on_the_mac"
+      "pending": "ollama_show_license_returned_empty_text_on_the_mac",
+      "whitespace_only": true
     },
     {
       "tag": "gemma3:12b",
@@ -45,7 +46,8 @@
       "exit_code": 0,
       "license_text_bytes": 1,
       "read_on": "2026-10-20",
-      "pending": "ollama_show_license_returned_empty_text_on_the_mac"
+      "pending": "ollama_show_license_returned_empty_text_on_the_mac",
+      "whitespace_only": true
     },
     {
       "tag": "qwen2.5vl:7b",
@@ -60,7 +62,8 @@
       "exit_code": 0,
       "license_text_bytes": 1,
       "read_on": "2026-10-20",
-      "pending": "ollama_show_license_returned_empty_text_on_the_mac"
+      "pending": "ollama_show_license_returned_empty_text_on_the_mac",
+      "whitespace_only": true
     }
   ],
   "spend": {
@@ -87,7 +90,8 @@
     "a_writing_run_holds_an_exclusive_lock_beside_the_registry_from_reading_it_to_writing_it_and_writes_the_evidence_and_the_registry_together_or_neither",
     "a_run_killed_between_its_two_replacements_can_still_leave_the_new_evidence_file_and_the_license_guard_then_names_it",
     "an_mit_text_with_a_copyright_line_before_its_body_stays_pending_under_its_own_reason_for_the_same_reason_as_a_filled_apache_appendix",
-    "a_stderr_line_the_probe_evidence_validator_would_flag_is_written_as_its_redaction_marker_and_the_whole_evidence_is_validated_before_it_is_written"
+    "a_stderr_line_the_probe_evidence_validator_would_flag_is_written_as_its_redaction_marker_and_the_whole_evidence_is_validated_before_it_is_written",
+    "a_license_text_containing_only_whitespace_is_recorded_with_its_byte_count_and_pending_as_empty_text"
   ],
   "spend_note": "ollama_show_reads_local_metadata_no_model_pulled_no_cloud_call"
 }

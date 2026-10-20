@@ -105,6 +105,7 @@ LIMITS = [
     "a_run_killed_between_its_two_replacements_can_still_leave_the_new_evidence_file_and_the_license_guard_then_names_it",
     "an_mit_text_with_a_copyright_line_before_its_body_stays_pending_under_its_own_reason_for_the_same_reason_as_a_filled_apache_appendix",
     "a_stderr_line_the_probe_evidence_validator_would_flag_is_written_as_its_redaction_marker_and_the_whole_evidence_is_validated_before_it_is_written",
+    "a_license_text_containing_only_whitespace_is_recorded_with_its_byte_count_and_pending_as_empty_text",
 ]
 Runner = Callable[[list[str]], subprocess.CompletedProcess]
 
@@ -202,6 +203,8 @@ def read_tag(tag: str, listed: dict[str, str], day: str, runner: Runner | None =
         return record, False
     if not data.strip():
         record["pending"] = EMPTY
+        if data:
+            record["whitespace_only"] = True
         return record, False
     license_name, named_by = name_license(data)
     if license_name is None:
