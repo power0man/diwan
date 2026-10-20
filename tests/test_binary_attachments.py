@@ -448,6 +448,7 @@ def test_binary_uploads_resilient_to_journal_refusal_and_missing_files(app, monk
     }
 
     # 2. Verify os.listdir failure on root fd reports filesystem_error
+    monkeypatch.setattr(agent_workspace.os, 'listdir', orig_listdir)
     def open_then_fail_first_listdir(path, **kwargs):
         real_fd = orig_open_dir(path, **kwargs)
         def fail_first(fd):
@@ -461,14 +462,13 @@ def test_binary_uploads_resilient_to_journal_refusal_and_missing_files(app, monk
     }
 
     # 3. Verify os.listdir failure on state fd (.binary-uploads) reports filesystem_error
+    monkeypatch.setattr(agent_workspace.os, 'listdir', orig_listdir)
     def open_then_fail_second_listdir(path, **kwargs):
         real_fd = orig_open_dir(path, **kwargs)
-        call_num = [0]
-        def fail_second(fd):
-            call_num[0] += 1
-            if call_num[0] > 1:
+        def fail_second(target_fd):
+            if target_fd != real_fd:
                 raise OSError(errno.EIO, 'synthetic I/O error on receipts state listdir')
-            return orig_listdir(fd)
+            return orig_listdir(target_fd)
         monkeypatch.setattr(agent_workspace.os, 'listdir', fail_second)
         return real_fd
     monkeypatch.setattr(agent_workspace, '_open_directory', open_then_fail_second_listdir)
