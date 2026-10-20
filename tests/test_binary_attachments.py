@@ -635,21 +635,21 @@ def test_binary_uploads_handles_unexpected_exception(app, monkeypatch):
 
 def test_binary_backup_refuses_malformed_binary_content_with_backup_invalid():
     from workspace_tools import backup
-    dirs = {'', 'projects', 'staging', 'projects/p1', 'projects/p1/sessions',
-            'projects/p1/uploads', 'projects/p1/uploads/.binary-uploads'}
+    pid = 'a' * 32
+    dirs = {'', 'projects', 'staging', f'projects/{pid}', f'projects/{pid}/sessions',
+            f'projects/{pid}/uploads', f'projects/{pid}/uploads/.binary-uploads'}
     corrupt_png = b'not a valid png stream'
     receipt = {
-        'format': 'binary-receipt-v1',
         'sha256': hashlib.sha256(corrupt_png).hexdigest(),
         'size_bytes': len(corrupt_png),
         'mime': 'image/png',
         'path': 'binary/corrupt.png',
     }
-    meta = json.dumps({'id': 'p1', 'name': 'Project 1'}).encode('utf-8')
+    meta = json.dumps({'id': pid, 'name': 'Project 1'}).encode('utf-8')
     data = {
-        'projects/p1/meta.json': meta,
-        'projects/p1/uploads/.binary-uploads/corrupt.png.json': json.dumps(receipt).encode('utf-8'),
-        'projects/p1/uploads/binary/corrupt.png': corrupt_png,
+        f'projects/{pid}/meta.json': meta,
+        f'projects/{pid}/uploads/.binary-uploads/corrupt.png.json': json.dumps(receipt).encode('utf-8'),
+        f'projects/{pid}/uploads/binary/corrupt.png': corrupt_png,
     }
     with pytest.raises(backup.BackupError) as exc:
         backup._shape(dirs, data)

@@ -483,7 +483,7 @@ def _shape(dirs, data):
                         _need(validate_receipt_shape(doc, target), "backup_invalid")
                         if artifact + "/" + target in data:
                             raw = data[artifact + "/" + target]
-                            _need(doc["size_bytes"] == len(raw)
+                            _need(type(doc["size_bytes"]) is int and doc["size_bytes"] == len(raw)
                                   and doc["sha256"] == hashlib.sha256(raw).hexdigest(),
                                   "backup_invalid")
                             try:
