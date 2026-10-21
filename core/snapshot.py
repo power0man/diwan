@@ -29,6 +29,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import os
 import re
 import stat
@@ -192,3 +193,9 @@ def verify_full(path: Path) -> bool:
     """تحققٌ تام عبر الأجيال — يعيد True أو يرمي LedgerCorrupt."""
     full_entries(path)
     return True
+
+
+def get_snapshot_sha256(data: dict) -> str:
+    """توليد بصمة SHA-256 حتمية للحالة السريعة بترتيب المفاتيح وضغط المسافات."""
+    canonical_str = json.dumps(data, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return hashlib.sha256(canonical_str.encode("utf-8")).hexdigest()

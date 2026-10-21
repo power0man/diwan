@@ -182,3 +182,17 @@ class Glossary:
 
     def anchor(self) -> dict:
         return self._ledger.anchor()
+
+
+def normalize_glossary_key(term: str) -> str:
+    """توحيد أشكال الألف وإزالة التطويل/الكشيدة وتقليص المسافات لمطابقة مدخلات المعجم."""
+    if not isinstance(term, str) or not term:
+        return ""
+    import re
+    # توحيد أشكال الألف (أ، إ، آ، ٱ) إلى ألف مجردة (ا)
+    t = re.sub(r"[أإآٱ]", "ا", term)
+    # إزالة التطويل/الكشيدة U+0640
+    t = t.replace("\u0640", "")
+    # تقليص المسافات المتعددة والأطراف
+    t = re.sub(r"\s+", " ", t).strip()
+    return t

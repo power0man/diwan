@@ -154,3 +154,29 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+
+def strip_arabic_proclitics(word: str) -> str:
+    """تجريد حروف العطف والجر والتعريف المتصلة (ال، و، ف، ب، ك، ل) مع حفظ أصل الكلمة والجذور الثنائية."""
+    if not isinstance(word, str) or not word:
+        return "" if word is not None else word
+    if len(word) <= 3:
+        return word
+
+    w = word
+    # 1. إزالة السوابق المركبة: وال، فال، كال، بال، لل (بشرط بقاء جذر من حرفين على الأقل مثل: حق، شمس)
+    for p in ("وال", "فال", "كال", "بال", "لل"):
+        if w.startswith(p) and len(w) - len(p) >= 2:
+            return w[len(p):]
+
+    # 2. إزالة السوابق الأحادية: و، ف، ب، ك، ل
+    for p in ("و", "ف", "ب", "ك", "ل"):
+        if w.startswith(p) and len(w) - 1 >= 2:
+            w = w[1:]
+            break
+
+    # 3. إزالة أداة التعريف (ال) إن وجدت بعد الحرف الأحادي أو منفردة
+    if w.startswith("ال") and len(w) - 2 >= 2:
+        w = w[2:]
+
+    return w
